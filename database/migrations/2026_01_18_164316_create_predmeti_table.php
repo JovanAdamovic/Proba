@@ -11,10 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('predmets', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+       Schema::create('predmeti', function (Blueprint $table) {
+        $table->id();
+        $table->string('naziv');
+        $table->string('sifra')->unique();
+        $table->unsignedInteger('godina_studija');
+        $table->timestamps();
+    });
     }
 
     /**
@@ -22,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('predmets');
+        Schema::dropIfExists('predmeti');
     }
 };
