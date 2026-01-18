@@ -26,4 +26,21 @@ class Predaja extends Model
         'submitted_at' => 'datetime',
     ];
 
+
+
+      public function zadatak()
+    {
+        return $this->belongsTo(Zadatak::class, 'zadatak_id');
+    }
+
+    public function student()
+    {
+        return $this->belongsTo(User::class, 'student_id');
+    }
+
+    public function proveraPlagijata()
+    {
+        return $this->hasOne(ProveraPlagijata::class, 'predaja_id');
+    }
+
 }

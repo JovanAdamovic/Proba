@@ -21,4 +21,9 @@ class ProveraPlagijata extends Model
         'procenat_slicnosti' => 'decimal:2',
     ];
 
+        public function predaja()
+    {
+        return $this->belongsTo(Predaja::class, 'predaja_id');
+    }
+
 }

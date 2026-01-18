@@ -24,5 +24,20 @@ class Zadatak extends Model
     ];
 
 
+     public function predmet()
+    {
+        return $this->belongsTo(Predmet::class, 'predmet_id');
+    }
+
+    public function profesor()
+    {
+        return $this->belongsTo(User::class, 'profesor_id');
+    }
+
+    public function predaje()
+    {
+        return $this->hasMany(Predaja::class, 'zadatak_id');
+    }
+
 }
 

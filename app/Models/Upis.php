@@ -16,6 +16,15 @@ class Upis extends Model
         'predmet_id',
     ];
 
+     public function student()
+    {
+        return $this->belongsTo(User::class, 'student_id');
+    }
+
+    public function predmet()
+    {
+        return $this->belongsTo(Predmet::class, 'predmet_id');
+    }
 
 }
 
