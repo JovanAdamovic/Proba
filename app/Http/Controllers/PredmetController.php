@@ -31,18 +31,23 @@ class PredmetController extends Controller
     // POST /api/predmeti
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'naziv' => ['required', 'string', 'max:255'],
             'sifra' => ['required', 'string', 'max:50', 'unique:predmeti,sifra'],
             'godina_studija' => ['required', 'integer', 'min:1', 'max:8'],
         ]);
 
-        $predmet = Predmet::create($validated);
-
-        return response()->json([
-            'message' => 'Predmet je uspešno kreiran.',
-            'data' => new PredmetResource($predmet),
-        ], 201);
+         if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validacija nije prošla.',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+        
+        $data = $validator->validated();
+        $predmet = Predmet::create($data);
+   
+        return response()->json(new PredmetResource($predmet), 201);
 
     }
 

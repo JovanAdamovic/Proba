@@ -16,6 +16,8 @@ use App\Http\Controllers\PredmetController;
     Route::get('/predmeti/{id}', [PredmetController::class, 'show']);
     Route::delete('/predmeti/{id}', [PredmetController::class, 'destroy']);
     Route::put('/predmeti/{id}', [PredmetController::class, 'update']);
+    Route::post('/predmeti', [PredmetController::class, 'store']);
+
 
 
 
