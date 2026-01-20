@@ -23,7 +23,7 @@ return new class extends Migration
 
         $table->decimal('procenat_slicnosti', 5, 2)->nullable();
 
-        $table->enum('status', ['U_TOKU', 'ZAVRSENO', 'NEUSPELO'])
+        $table->enum('status', ['U_TOKU', 'ZAVRSENO', 'GRESKA'])
             ->default('U_TOKU');
 
         $table->timestamps();

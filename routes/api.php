@@ -5,6 +5,7 @@ use App\Http\Controllers\PredmetController;
 use App\Http\Controllers\UpisController;
 use App\Http\Controllers\ZadatakController;
 use App\Http\Controllers\PredajaController;
+use App\Http\Controllers\ProveraPlagijataController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +40,15 @@ Route::get('/predaje/{id}', [PredajaController::class, 'show']);
 Route::post('/predaje', [PredajaController::class, 'store']);
 Route::put('/predaje/{id}', [PredajaController::class, 'update']);
 Route::delete('/predaje/{id}', [PredajaController::class, 'destroy']);
+
+Route::get('/provere-plagijata', [ProveraPlagijataController::class, 'index']);
+Route::get('/provere-plagijata/{id}', [ProveraPlagijataController::class, 'show']);
+Route::post('/provere-plagijata', [ProveraPlagijataController::class, 'store']);
+Route::put('/provere-plagijata/{id}', [ProveraPlagijataController::class, 'update']);
+Route::delete('/provere-plagijata/{id}', [ProveraPlagijataController::class, 'destroy']);
+Route::post('/predaje/{predajaId}/provera-plagijata', [ProveraPlagijataController::class, 'pokreni']);
+
+
 
 
 
