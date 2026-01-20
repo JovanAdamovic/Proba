@@ -39,6 +39,7 @@ class PredajaResource extends JsonResource
             'provera_plagijata' => $this->whenLoaded('proveraPlagijata', fn () => [
                 'id' => $this->proveraPlagijata->id,
                 'status' => $this->proveraPlagijata->status,
+                'procenat_slicnosti' => (float) $this->proveraPlagijata->procenat_slicnosti,
             ]),
 
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),

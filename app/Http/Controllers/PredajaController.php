@@ -13,13 +13,13 @@ class PredajaController extends Controller
     public function index()
     {
         return PredajaResource::collection(
-            Predaja::with(['student', 'zadatak'])->get()
+            Predaja::with(['student', 'zadatak','proveraPlagijata'])->get()
         );
     }
 
     public function show($id)
     {
-        $predaja = Predaja::with(['student', 'zadatak'])->findOrFail($id);
+        $predaja = Predaja::with(['student', 'zadatak','proveraPlagijata'])->findOrFail($id);
         return new PredajaResource($predaja);
     }
 
