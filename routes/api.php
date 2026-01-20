@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PredmetController;
 use App\Http\Controllers\UpisController;
 use App\Http\Controllers\ZadatakController;
+use App\Http\Controllers\PredajaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,12 @@ Route::get('/zadaci/{id}', [ZadatakController::class, 'show']);
 Route::post('/zadaci', [ZadatakController::class, 'store']);
 Route::put('/zadaci/{id}', [ZadatakController::class, 'update']);
 Route::delete('/zadaci/{id}', [ZadatakController::class, 'destroy']);
+
+Route::get('/predaje', [PredajaController::class, 'index']);
+Route::get('/predaje/{id}', [PredajaController::class, 'show']);
+Route::post('/predaje', [PredajaController::class, 'store']);
+Route::put('/predaje/{id}', [PredajaController::class, 'update']);
+Route::delete('/predaje/{id}', [PredajaController::class, 'destroy']);
 
 
 

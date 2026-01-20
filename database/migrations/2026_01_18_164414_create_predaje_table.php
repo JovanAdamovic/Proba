@@ -22,7 +22,7 @@ return new class extends Migration
             ->constrained('users')
             ->cascadeOnDelete();
 
-        $table->enum('status', ['PREDATO', 'OCENJENO', 'VRACENO', 'ZAKASNENO'])
+        $table->enum('status', ['PREDATO', 'OCENJENO', 'VRACENO', 'ZAKASNJENO'])
             ->default('PREDATO');
 
         $table->decimal('ocena', 5, 2)->nullable();
