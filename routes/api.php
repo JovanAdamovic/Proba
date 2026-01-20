@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PredmetController;
+use App\Http\Controllers\UpisController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +19,22 @@ use App\Http\Controllers\PredmetController;
     Route::delete('/predmeti/{id}', [PredmetController::class, 'destroy']);
     Route::put('/predmeti/{id}', [PredmetController::class, 'update']);
     Route::post('/predmeti', [PredmetController::class, 'store']);
+
+
+    Route::get('/upisi', [UpisController::class, 'index']);
+    Route::get('/upisi/{id}', [UpisController::class, 'show']);
+    Route::post('/upisi', [UpisController::class, 'store']);
+    Route::put('/upisi/{id}', [UpisController::class, 'update']);
+    Route::delete('/upisi/{id}', [UpisController::class, 'destroy']);
+
+    
+
+    //Route::apiResource('upisi', UpisController::class);
+    /* Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('upisi', UpisController::class);
+}); */
+
+
 
 
 
