@@ -38,9 +38,11 @@ class PredajaResource extends JsonResource
             'provera_plagijata' => $this->when(
                 auth()->check() && auth()->user()->uloga === 'PROFESOR' && $this->relationLoaded('proveraPlagijata'),
                 fn() => [
-                    'id' => $this->proveraPlagijata->id,
-                    'status' => $this->proveraPlagijata->status,
-                    'procenat_slicnosti' => (float) $this->proveraPlagijata->procenat_slicnosti,
+                    'id' => $this->proveraPlagijata?->id,
+                    'status' => $this->proveraPlagijata?->status,
+                    'procenat_slicnosti' => $this->proveraPlagijata?->procenat_slicnosti !== null
+                        ? (float) $this->proveraPlagijata->procenat_slicnosti
+                        : null,
                 ]
             ),
 
