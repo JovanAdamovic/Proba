@@ -7,6 +7,7 @@ use App\Models\Predaja;
 use App\Models\Predmet;
 use App\Models\ProveraPlagijata;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -164,7 +165,42 @@ class ProveraPlagijataController extends Controller
             ], 200);
         }
 
-        $procenat = random_int(0, 100);
+        $apiUrl = config('services.plagiarism_api.url');
+        $apiToken = config('services.plagiarism_api.token');
+
+        if (!$apiUrl) {
+            return response()->json(['message' => 'Plagiarism API nije konfigurisan.'], 500);
+        }
+
+        $payload = [
+            'predaja_id' => $predaja->id,
+            'file_path' => $predaja->file_path,
+            'student_id' => $predaja->student_id,
+            'zadatak_id' => $predaja->zadatak_id,
+        ];
+
+        $request = Http::timeout(15);
+        if ($apiToken) {
+            $request = $request->withToken($apiToken);
+        }
+
+        $response = $request->post($apiUrl, $payload);
+
+        if (!$response->successful()) {
+            return response()->json([
+                'message' => 'Provera plagijata nije uspela.',
+                'status' => $response->status(),
+            ], 502);
+        }
+
+        $data = $response->json();
+        $procenat = $data['procenat_slicnosti'] ?? $data['similarity'] ?? null;
+
+        if ($procenat === null) {
+            return response()->json([
+                'message' => 'Nevažeći odgovor API-ja za plagijat.',
+            ], 502);
+        }
 
         $provera = ProveraPlagijata::create([
             'predaja_id' => $predajaId,
