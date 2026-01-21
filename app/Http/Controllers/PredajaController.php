@@ -81,6 +81,7 @@ class PredajaController extends Controller
 
         $validator = Validator::make($request->all(), [
             'zadatak_id' => 'required|integer|exists:zadaci,id',
+            'file' => 'nullable|file|mimes:pdf,doc,docx,txt,zip|max:10240',
             'file_path' => 'nullable|string|max:255',
         ]);
 
@@ -110,11 +111,17 @@ class PredajaController extends Controller
             return response()->json(['message' => 'Već postoji predaja za ovaj zadatak.'], 409);
         }
 
+        $filePath = $request->file_path;
+
+        if ($request->hasFile('file')) {
+            $filePath = $request->file('file')->store('predaje', 'public');
+        }
+
         $predaja = Predaja::create([
             'zadatak_id' => $zadatakId,
             'student_id' => $user->id,
             'status' => 'PREDATO',
-            'file_path' => $request->file_path,
+            'file_path' => $filePath,
             'submitted_at' => now(),
         ]);
 
@@ -147,6 +154,7 @@ class PredajaController extends Controller
             'status' => ['sometimes', Rule::in($allowedStatus)],
             'ocena' => 'sometimes|nullable|numeric|min:0|max:10',
             'komentar' => 'sometimes|nullable|string',
+            'file' => 'sometimes|file|mimes:pdf,doc,docx,txt,zip|max:10240',
             'file_path' => 'sometimes|string|max:255',
             'submitted_at' => 'sometimes|nullable|date',
         ]);
@@ -157,8 +165,13 @@ class PredajaController extends Controller
                 'errors' => $validator->errors(),
             ], 422);
         }
+        $data = $validator->validated();
 
-        $predaja->update($validator->validated());
+        if ($request->hasFile('file')) {
+            $data['file_path'] = $request->file('file')->store('predaje', 'public');
+        }
+
+        $predaja->update($data);
 
         return response()->json(
             new PredajaResource($predaja->load(['student', 'zadatak'])),
@@ -200,5 +213,66 @@ class PredajaController extends Controller
                 })
                 ->get()
         );
+    }
+
+     public function exportCsv()
+    {
+        $user = auth()->user();
+
+        if ($user->uloga === 'STUDENT') {
+            return response()->json(['message' => 'Zabranjeno'], 403);
+        }
+
+        $query = Predaja::with(['student', 'zadatak.predmet', 'proveraPlagijata']);
+
+        if ($user->uloga === 'PROFESOR') {
+            $query->whereHas('zadatak.predmet', function ($q) use ($user) {
+                $q->where('profesor_id', $user->id);
+            });
+        }
+
+        $predaje = $query->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ];
+
+        $filename = 'predaje_export.csv';
+
+        return response()->streamDownload(function () use ($predaje) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, [
+                'ID',
+                'Student',
+                'Email',
+                'Predmet',
+                'Zadatak',
+                'Status',
+                'Ocena',
+                'Komentar',
+                'Provera plagijata',
+                'Procenat slicnosti',
+                'Predato',
+            ]);
+
+            foreach ($predaje as $predaja) {
+                fputcsv($handle, [
+                    $predaja->id,
+                    $predaja->student?->ime . ' ' . $predaja->student?->prezime,
+                    $predaja->student?->email,
+                    $predaja->zadatak?->predmet?->naziv,
+                    $predaja->zadatak?->naslov,
+                    $predaja->status,
+                    $predaja->ocena,
+                    $predaja->komentar,
+                    $predaja->proveraPlagijata?->status,
+                    $predaja->proveraPlagijata?->procenat_slicnosti,
+                    $predaja->submitted_at?->format('Y-m-d H:i:s'),
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, $headers);
     }
 }

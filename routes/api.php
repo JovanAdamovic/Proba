@@ -36,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/zadaci/{id}', [ZadatakController::class, 'show']);
 
     Route::get('/predaje', [PredajaController::class, 'index']);
+    Route::get('/predaje/export/csv', [PredajaController::class, 'exportCsv']);
     Route::get('/predaje/{id}', [PredajaController::class, 'show']);
 
     // STUDENT akcije (ti si rekao: student ne menja predaju)
