@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 
 class ProveraPlagijataController extends Controller
 {
-    private function mustBeProfesor()
+    private function proveriProfesora()
     {
         $user = auth()->user();
         if (!$user || $user->uloga !== 'PROFESOR') {
@@ -25,7 +25,7 @@ class ProveraPlagijataController extends Controller
 
     public function index()
     {
-        $user = $this->mustBeProfesor();
+        $user = $this->proveriProfesora();
 
         return ProveraPlagijataResource::collection(
             ProveraPlagijata::with(['predaja.zadatak.predmet'])
@@ -36,7 +36,7 @@ class ProveraPlagijataController extends Controller
 
     public function show($id)
     {
-        $user = $this->mustBeProfesor();
+        $user = $this->proveriProfesora();
 
         $provera = ProveraPlagijata::with(['predaja.zadatak.predmet'])->findOrFail($id);
 
@@ -135,52 +135,51 @@ class ProveraPlagijataController extends Controller
     }
 
 
-   public function pokreni($predajaId)
-{
-    $user = auth()->user();
+    public function pokreni($predajaId)
+    {
+        $user = auth()->user();
 
-    if ($user->uloga !== 'PROFESOR') {
-        return response()->json(['message' => 'Zabranjeno'], 403);
-    }
+        if ($user->uloga !== 'PROFESOR') {
+            return response()->json(['message' => 'Zabranjeno'], 403);
+        }
 
-    $predaja = Predaja::with(['zadatak.predmet'])->findOrFail($predajaId);
+        $predaja = Predaja::with(['zadatak.predmet'])->findOrFail($predajaId);
 
-    $predmetId = $predaja->zadatak?->predmet_id;
+        $predmetId = $predaja->zadatak?->predmet_id;
 
-    $ok = Predmet::where('id', $predmetId)
-        ->where('profesor_id', $user->id)
-        ->exists();
+        $ok = Predmet::where('id', $predmetId)
+            ->where('profesor_id', $user->id)
+            ->exists();
 
-    if (!$ok) {
-        return response()->json(['message' => 'Zabranjeno'], 403);
-    }
+        if (!$ok) {
+            return response()->json(['message' => 'Zabranjeno'], 403);
+        }
 
-    $postojeca = ProveraPlagijata::where('predaja_id', $predajaId)->first();
-    if ($postojeca) {
+        $postojeca = ProveraPlagijata::where('predaja_id', $predajaId)->first();
+        if ($postojeca) {
+            return response()->json([
+                'predaja_id' => $predajaId,
+                'procenat_slicnosti' => $postojeca->procenat_slicnosti,
+                'status' => $postojeca->status,
+            ], 200);
+        }
+
+        $procenat = random_int(0, 100);
+
+        $provera = ProveraPlagijata::create([
+            'predaja_id' => $predajaId,
+            'procenat_slicnosti' => $procenat,
+            'status' => 'ZAVRSENO',
+        ]);
+
+        $predaja->update([
+            'komentar' => "Provera plagijata: {$provera->procenat_slicnosti}% ({$provera->status})"
+        ]);
+
         return response()->json([
             'predaja_id' => $predajaId,
-            'procenat_slicnosti' => $postojeca->procenat_slicnosti,
-            'status' => $postojeca->status,
-        ], 200);
+            'procenat_slicnosti' => $provera->procenat_slicnosti,
+            'status' => $provera->status,
+        ], 201);
     }
-
-    $procenat = random_int(0, 100);
-
-    $provera = ProveraPlagijata::create([
-        'predaja_id' => $predajaId,
-        'procenat_slicnosti' => $procenat,
-        'status' => 'ZAVRSENO',
-    ]);
-
-    $predaja->update([
-        'komentar' => "Provera plagijata: {$provera->procenat_slicnosti}% ({$provera->status})"
-    ]);
-
-    return response()->json([
-        'predaja_id' => $predajaId,
-        'procenat_slicnosti' => $provera->procenat_slicnosti,
-        'status' => $provera->status,
-    ], 201);
-}
-
 }

@@ -12,6 +12,7 @@ class Predmet extends Model
     protected $table = 'predmeti';
 
     protected $fillable = [
+        'profesor_id',
         'naziv',
         'sifra',
         'godina_studija',

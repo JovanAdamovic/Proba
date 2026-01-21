@@ -140,11 +140,6 @@ class PredajaController extends Controller
             if (!$predmetJeNjegov) return response()->json(['message' => 'Zabranjeno'], 403);
         }
 
-        $predaja = Predaja::find($id);
-        if (!$predaja) {
-            return response()->json(['message' => 'Predaja nije pronađena.'], 404);
-        }
-
         $allowedStatus = ['PREDATO', 'OCENJENO', 'VRACENO', 'ZAKASNJENO'];
 
         $validator = Validator::make($request->all(), [

@@ -9,8 +9,22 @@ use Illuminate\Support\Facades\Validator;
 
 class UpisController extends Controller
 {
+    private function proveriAdmina()
+    {
+        $user = auth()->user();
+        if (!$user || $user->uloga !== 'ADMIN') {
+            return response()->json(['message' => 'Zabranjeno'], 403);
+        }
+
+        return null;
+    }
+
     public function index()
     {
+        if ($response = $this->proveriAdmina()) {
+            return $response;
+        }
+
         return UpisResource::collection(
             Upis::with(['student', 'predmet'])->get()
         );
@@ -18,12 +32,20 @@ class UpisController extends Controller
 
     public function show($id)
     {
+        if ($response = $this->proveriAdmina()) {
+            return $response;
+        }
+
         $upis = Upis::with(['student', 'predmet'])->findOrFail($id);
         return new UpisResource($upis);
     }
 
     public function store(Request $request)
     {
+        if ($response = $this->proveriAdmina()) {
+            return $response;
+        }
+
         $validator = Validator::make($request->all(), [
             'student_id' => 'required|integer|exists:users,id',
             'predmet_id' => 'required|integer|exists:predmeti,id',
@@ -40,12 +62,16 @@ class UpisController extends Controller
 
         return response()->json([
             'message' => 'Upis je uspešno kreiran.',
-            'data' => new UpisResource($upis->load(['student','predmet'])),
+            'data' => new UpisResource($upis->load(['student', 'predmet'])),
         ], 201);
     }
 
     public function update(Request $request, $id)
     {
+        if ($response = $this->proveriAdmina()) {
+            return $response;
+        }
+
         $upis = Upis::find($id);
         if (!$upis) {
             return response()->json(['message' => 'Upis nije pronađen.'], 404);
@@ -65,11 +91,15 @@ class UpisController extends Controller
 
         $upis->update($validator->validated());
 
-        return response()->json(new UpisResource($upis->load(['student','predmet'])), 200);
+        return response()->json(new UpisResource($upis->load(['student', 'predmet'])), 200);
     }
 
     public function destroy($id)
     {
+        if ($response = $this->proveriAdmina()) {
+            return $response;
+        }
+
         $upis = Upis::find($id);
         if (!$upis) {
             return response()->json(['message' => 'Upis nije pronađen.'], 404);

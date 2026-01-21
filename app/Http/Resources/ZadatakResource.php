@@ -18,13 +18,13 @@ class ZadatakResource extends JsonResource
             'opis' => $this->opis,
             'rok_predaje' => $this->rok_predaje,
 
-            'predmet' => $this->whenLoaded('predmet', fn () => [
+            'predmet' => $this->whenLoaded('predmet', fn() => [
                 'id' => $this->predmet->id,
                 'naziv' => $this->predmet->naziv,
                 'sifra' => $this->predmet->sifra,
             ]),
 
-            'profesor' => $this->whenLoaded('profesor', fn () => [
+            'profesor' => $this->whenLoaded('profesor', fn() => [
                 'id' => $this->profesor->id,
                 'ime' => $this->profesor->ime,
                 'prezime' => $this->profesor->prezime,

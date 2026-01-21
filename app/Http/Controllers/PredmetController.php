@@ -65,7 +65,7 @@ class PredmetController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'profesor_id' => ['nullable','exists:users,id'],
+            'profesor_id' => ['nullable', 'exists:users,id'],
             'naziv' => ['required', 'string', 'max:255'],
             'sifra' => ['required', 'string', 'max:50', 'unique:predmeti,sifra'],
             'godina_studija' => ['required', 'integer', 'min:1', 'max:8'],
@@ -99,7 +99,7 @@ class PredmetController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'profesor_id' => ['sometimes','nullable','exists:users,id'],
+            'profesor_id' => ['sometimes', 'nullable', 'exists:users,id'],
             'naziv' => ['sometimes', 'required', 'string', 'max:255'],
             'sifra' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('predmeti', 'sifra')->ignore($predmet->id)],
             'godina_studija' => ['sometimes', 'required', 'integer', 'min:1', 'max:8'],

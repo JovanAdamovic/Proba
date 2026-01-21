@@ -16,7 +16,7 @@ class ProveraPlagijataResource extends JsonResource
             'status' => $this->status,
 
             // ako ucitas relaciju predaja
-            'predaja' => $this->whenLoaded('predaja', fn () => [
+            'predaja' => $this->whenLoaded('predaja', fn() => [
                 'id' => $this->predaja->id,
                 'zadatak_id' => $this->predaja->zadatak_id,
                 'student_id' => $this->predaja->student_id,
