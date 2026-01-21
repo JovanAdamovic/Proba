@@ -13,6 +13,8 @@ return new class extends Migration
     {
        Schema::create('predmeti', function (Blueprint $table) {
         $table->id();
+        $table->foreignId('profesor_id')->nullable()
+        ->constrained('users')->nullOnDelete();
         $table->string('naziv');
         $table->string('sifra')->unique();
         $table->unsignedInteger('godina_studija');

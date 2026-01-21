@@ -17,8 +17,8 @@ class Predmet extends Model
         'godina_studija',
     ];
 
-    
-      public function zadaci()
+
+    public function zadaci()
     {
         return $this->hasMany(Zadatak::class, 'predmet_id');
     }
@@ -33,7 +33,8 @@ class Predmet extends Model
         return $this->belongsToMany(User::class, 'upisi', 'predmet_id', 'student_id');
     }
 
-
-
+    public function profesor()
+    {
+        return $this->belongsTo(User::class, 'profesor_id');
+    }
 }
-

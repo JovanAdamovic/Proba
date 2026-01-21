@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
             'prezime' => 'Petrović',
             'email' => 'profesor@fon.rs',
             'password' => Hash::make('password'),
-            'uloga' => 'profesor',
+            'uloga' => 'PROFESOR',
         ]);
 
         // STUDENTI
@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
             'prezime' => 'Jovanović',
             'email' => 'ana@student.rs',
             'password' => Hash::make('password'),
-            'uloga' => 'student',
+            'uloga' => 'STUDENT',
         ]);
 
         User::create([
@@ -33,7 +33,7 @@ class UserSeeder extends Seeder
             'prezime' => 'Petrović',
             'email' => 'marko@student.rs',
             'password' => Hash::make('password'),
-            'uloga' => 'student',
+            'uloga' => 'STUDENT',
         ]);
 
         User::create([
@@ -41,7 +41,7 @@ class UserSeeder extends Seeder
             'prezime' => 'Nikolić',
             'email' => 'jovana@student.rs',
             'password' => Hash::make('password'),
-            'uloga' => 'student',
+            'uloga' => 'STUDENT',
         ]);
 
         // ADMIN
@@ -50,7 +50,7 @@ class UserSeeder extends Seeder
             'prezime' => 'Sistema',
             'email' => 'admin@fon.rs',
             'password' => Hash::make('admin123'),
-            'uloga' => 'admin',
+            'uloga' => 'ADMIN',
         ]);
     }
 }
