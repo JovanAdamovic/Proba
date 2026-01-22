@@ -181,9 +181,35 @@ class PredajaController extends Controller
 
     public function destroy($id)
     {
-        $predaja = Predaja::find($id);
+        $user = auth()->user();
+        $predaja = Predaja::with('zadatak.predmet')->find($id);
         if (!$predaja) {
             return response()->json(['message' => 'Predaja nije pronađena.'], 404);
+        }
+
+        if ($user->uloga === 'STUDENT') {
+            if ((int)$predaja->student_id !== (int)$user->id) {
+                return response()->json(['message' => 'Zabranjeno'], 403);
+            }
+
+            if ($predaja->status === 'OCENJENO') {
+                return response()->json(['message' => 'Predaja je već ocenjena.'], 409);
+            }
+        }
+
+        if ($user->uloga === 'PROFESOR') {
+            $predmetId = $predaja->zadatak?->predmet_id;
+            if (!$predmetId) {
+                return response()->json(['message' => 'Predaja nema vezan predmet.'], 409);
+            }
+
+            $predmetJeNjegov = Predmet::where('id', $predmetId)
+                ->where('profesor_id', $user->id)
+                ->exists();
+
+            if (!$predmetJeNjegov) {
+                return response()->json(['message' => 'Zabranjeno'], 403);
+            }
         }
 
         $predaja->delete();
@@ -215,7 +241,7 @@ class PredajaController extends Controller
         );
     }
 
-     public function exportCsv()
+    public function exportCsv()
     {
         $user = auth()->user();
 
