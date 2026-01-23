@@ -1,87 +1,28 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./auth/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Navbar from "./components/Navbar";
+
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Predmeti from "./pages/Predmeti";
 import Zadaci from "./pages/Zadaci";
 import Predaje from "./pages/Predaje";
 
-export default function App() {
+function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
+    <AuthProvider>
+      <Navbar />
+      <Routes>
+        <Route path="/login" element={<Login />} />
 
-      <Route
-        path="/*"
-        element={
-          <ProtectedRoute>
-            <div>
-              <Navbar />
-              <Routes>
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="predmeti" element={<Predmeti />} />
-                <Route path="zadaci" element={<Zadaci />} />
-                <Route path="predaje" element={<Predaje />} />
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
-              </Routes>
-            </div>
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/predmeti" element={<ProtectedRoute><Predmeti /></ProtectedRoute>} />
+        <Route path="/zadaci" element={<ProtectedRoute><Zadaci /></ProtectedRoute>} />
+        <Route path="/predaje" element={<ProtectedRoute><Predaje /></ProtectedRoute>} />
+      </Routes>
+    </AuthProvider>
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{/*import './App.css';
-import Navbar from './components/Navbar';
-import LoginPage from './pages/LoginPage';
-import Pocetna from './pages/Pocetna';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-
-
-function App() {
-  return (
-    <div className="App">
-      <BrowserRouter>
-      <Navbar></Navbar>
-        <Routes>
-          
-            <Route path="/" element={<Pocetna />} />
-             <Route path="/login" element={<LoginPage />} />
-             {/* <Route path="/register" element={<Register />} />*/}
-
-         
-        //</Routes>
-       
-     // </BrowserRouter>
-   // </div>
- /// );
-//}
-
-//export default App;
-//*/}
+export default App;

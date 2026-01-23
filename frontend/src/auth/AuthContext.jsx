@@ -1,46 +1,70 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import http from "../api/http";
 
 const AuthContext = createContext(null);
 
+const API_URL = "http://127.0.0.1:8000/api";
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(() => localStorage.getItem("token") || "");
+  const [user, setUser] = useState(() => {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  });
 
-  async function fetchMe() {
-    try {
-      const res = await http.get("/me");
-      setUser(res.data);
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchMe();
-  }, []);
+  // helper za auth header
+  const authHeaders = () =>
+    token ? { Authorization: `Bearer ${token}` } : {};
 
   async function login(email, password) {
-    const res = await http.post("/login", { email, password });
-    localStorage.setItem("token", res.data.access_token);
-    await fetchMe();
-    return res.data;
+    const res = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || "Login error");
+
+    localStorage.setItem("token", data.access_token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    setToken(data.access_token);
+    setUser(data.user);
   }
 
   async function logout() {
     try {
-      await http.post("/logout");
-    } catch {
-      // ignore
+      // nije problem i ako failuje (token istekao) — svakako cistimo local state
+      await fetch(`${API_URL}/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
+      });
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setToken("");
+      setUser(null);
     }
-    localStorage.removeItem("token");
-    setUser(null);
   }
 
+  // (opciono) osvezi user preko /me kad postoji token
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_URL}/me`, { headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => {
+        if (me) {
+          localStorage.setItem("user", JSON.stringify(me));
+          setUser(me);
+        }
+      })
+      .catch(() => {});
+  }, [token]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ token, user, login, logout, authHeaders }}>
       {children}
     </AuthContext.Provider>
   );
