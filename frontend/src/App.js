@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
-
 import Layout from "./components/Layout";
 
 import Login from "./pages/Login";
@@ -10,15 +9,12 @@ import Predmeti from "./pages/Predmeti";
 import Zadaci from "./pages/Zadaci";
 import Predaje from "./pages/Predaje";
 
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <Routes>
-
-        {/* LOGIN — BEZ NAVBARA */}
         <Route path="/login" element={<Login />} />
 
-        {/* SVE ISPOD OVOGA IMA NAVBAR */}
         <Route
           path="/"
           element={
@@ -63,11 +59,8 @@ function App() {
           }
         />
 
-        {/* fallback */}
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   );
 }
-
-export default App;

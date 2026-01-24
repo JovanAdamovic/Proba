@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import Button from "../components/Button";
@@ -13,6 +13,12 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // ✅ OVO DODAJ OVDE
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => (document.body.style.overflow = "auto");
+  }, []);
 
   const canSubmit = useMemo(() => {
     const e = email.trim();
@@ -36,7 +42,6 @@ export default function Login() {
       await login(email.trim(), password);
       nav("/");
     } catch (e2) {
-      // login u AuthContext baca Error(message), pa uzmi message
       setErr(e2?.message || "Login nije uspeo");
     } finally {
       setBusy(false);
@@ -44,37 +49,39 @@ export default function Login() {
   }
 
   return (
-    <div style={{ maxWidth: 420, margin: "40px auto" }}>
-      <Card>
-        <h2>Login</h2>
+    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 16 }}>
+      <div style={{ width: "min(420px, 100%)" }}>
+        <Card>
+          <h2>Login</h2>
 
-        <form onSubmit={onSubmit} style={{ display: "grid", gap: 10 }}>
-          <div>
-            <label>Email</label>
-            <Input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="npr. student@test.com"
-            />
-          </div>
+          <form onSubmit={onSubmit} style={{ display: "grid", gap: 10 }}>
+            <div>
+              <label>Email</label>
+              <Input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="npr. student@test.com"
+              />
+            </div>
 
-          <div>
-            <label>Lozinka</label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
+            <div>
+              <label>Lozinka</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
 
-          {err && <div style={{ color: "crimson" }}>{err}</div>}
+            {err && <div style={{ color: "crimson" }}>{err}</div>}
 
-          <Button type="submit" disabled={!canSubmit || busy}>
-            {busy ? "Ulogujem..." : "Uloguj se"}
-          </Button>
-        </form>
-      </Card>
+            <Button type="submit" disabled={!canSubmit || busy}>
+              {busy ? "Ulogujem..." : "Uloguj se"}
+            </Button>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }
