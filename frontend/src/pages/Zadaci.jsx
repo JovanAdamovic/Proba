@@ -9,11 +9,23 @@ import Modal from "../components/Modal";
 export default function Zadaci() {
   const { user } = useAuth();
   const isAdmin = user?.uloga === "ADMIN";
+  const isProfesor = user?.uloga === "PROFESOR";
 
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [err, setErr] = useState("");
   const [busyId, setBusyId] = useState(null);
+
+  // profesor create
+  const [createErr, setCreateErr] = useState("");
+  const [createBusy, setCreateBusy] = useState(false);
+  const [predmeti, setPredmeti] = useState([]);
+  const [form, setForm] = useState({
+    predmetId: "",
+    naslov: "",
+    opis: "",
+    rokPredaje: "",
+  });
 
   // modal detalji
   const [open, setOpen] = useState(false);
@@ -34,6 +46,23 @@ export default function Zadaci() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isProfesor) return;
+
+    async function loadPredmeti() {
+      setCreateErr("");
+      try {
+        const res = await http.get("/predmeti/moji");
+        setPredmeti(res.data.data || res.data || []);
+      } catch (e) {
+        setCreateErr(e?.response?.data?.message || "Greška pri učitavanju predmeta");
+        setPredmeti([]);
+      }
+    }
+
+    loadPredmeti();
+  }, [isProfesor]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -64,9 +93,114 @@ export default function Zadaci() {
     }
   }
 
+  // ✅ PROFESOR kreiranje zadatka
+  async function kreirajZadatak(e) {
+    e.preventDefault();
+    if (!isProfesor) return;
+
+    setCreateErr("");
+
+    if (!form.predmetId || !form.naslov || !form.rokPredaje) {
+      setCreateErr("Popuni predmet, naslov i rok.");
+      return;
+    }
+
+    setCreateBusy(true);
+    try {
+      await http.post("/zadaci", {
+        predmet_id: form.predmetId,
+        naslov: form.naslov,
+        opis: form.opis || null,
+        rok_predaje: form.rokPredaje,
+      });
+
+      setForm({ predmetId: "", naslov: "", opis: "", rokPredaje: "" });
+      await load();
+    } catch (e2) {
+      // ako backend vraća validacione greske u errors
+      const msg =
+        e2?.response?.data?.message ||
+        (e2?.response?.data?.errors
+          ? Object.values(e2.response.data.errors).flat().join(" ")
+          : null) ||
+        "Greška pri kreiranju zadatka";
+      setCreateErr(msg);
+    } finally {
+      setCreateBusy(false);
+    }
+  }
+
   return (
     <div style={{ padding: 16, display: "grid", gap: 12 }}>
       <h2>{isAdmin ? "Zadaci" : "Moji zadaci"}</h2>
+
+      {isProfesor && (
+        <Card>
+          <div style={{ fontWeight: 800, marginBottom: 10 }}>Novi zadatak</div>
+
+          <form onSubmit={kreirajZadatak} style={{ display: "grid", gap: 10, maxWidth: 520 }}>
+            <div style={{ display: "grid", gap: 6 }}>
+              <label>Predmet</label>
+              <select
+                value={form.predmetId}
+                onChange={(e) => setForm((prev) => ({ ...prev, predmetId: e.target.value }))}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #ddd",
+                  outline: "none",
+                }}
+                required
+              >
+                <option value="">-- Izaberi predmet --</option>
+                {predmeti.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.naziv}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: "grid", gap: 6 }}>
+              <label>Naslov</label>
+              <Input
+                placeholder="Naslov zadatka"
+                value={form.naslov}
+                onChange={(e) => setForm((prev) => ({ ...prev, naslov: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div style={{ display: "grid", gap: 6 }}>
+              <label>Opis (opciono)</label>
+              <Input
+                placeholder="Opis (opciono)"
+                value={form.opis}
+                onChange={(e) => setForm((prev) => ({ ...prev, opis: e.target.value }))}
+              />
+            </div>
+
+            <div style={{ display: "grid", gap: 6 }}>
+              <label>Rok predaje</label>
+              <Input
+                type="date"
+                value={form.rokPredaje}
+                onChange={(e) => setForm((prev) => ({ ...prev, rokPredaje: e.target.value }))}
+                required
+              />
+            </div>
+
+            {createErr && <div style={{ color: "crimson" }}>{createErr}</div>}
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <Button type="submit" disabled={createBusy}>
+                {createBusy ? "Kreiram..." : "Kreiraj zadatak"}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       <div style={{ maxWidth: 420 }}>
         <Input
@@ -82,7 +216,9 @@ export default function Zadaci() {
         <Card key={z.id}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
             <div>
-              <div><b>{z.naslov}</b></div>
+              <div>
+                <b>{z.naslov}</b>
+              </div>
               <div>Rok: {z.rok_predaje}</div>
               <div style={{ fontSize: 13, color: "#555" }}>{z.opis}</div>
             </div>
@@ -109,9 +245,15 @@ export default function Zadaci() {
       >
         {selected && (
           <div style={{ display: "grid", gap: 8 }}>
-            <div><b>Naslov:</b> {selected.naslov}</div>
-            <div><b>Rok:</b> {selected.rok_predaje}</div>
-            <div><b>Opis:</b> {selected.opis ?? "-"}</div>
+            <div>
+              <b>Naslov:</b> {selected.naslov}
+            </div>
+            <div>
+              <b>Rok:</b> {selected.rok_predaje}
+            </div>
+            <div>
+              <b>Opis:</b> {selected.opis ?? "-"}
+            </div>
           </div>
         )}
       </Modal>
