@@ -10,6 +10,7 @@ export default function Predaje() {
   const { user } = useAuth();
   const isAdmin = user?.uloga === "ADMIN";
   const isProfesor = user?.uloga === "PROFESOR";
+  const isStudent = user?.uloga === "STUDENT";
 
   const [items, setItems] = useState([]);
   const [err, setErr] = useState("");
@@ -21,6 +22,14 @@ export default function Predaje() {
   // modal
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
+
+  // student upload
+  const [zadaci, setZadaci] = useState([]);
+  const [zadatakId, setZadatakId] = useState("");
+  const [file, setFile] = useState(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const [uploadErr, setUploadErr] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   // profesor edit
   const [edit, setEdit] = useState({ status: "", ocena: "", komentar: "" });
@@ -47,6 +56,18 @@ export default function Predaje() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uloga]);
 
+  useEffect(() => {
+    if (!isStudent) return;
+    (async () => {
+      try {
+        const res = await http.get("/zadaci/moji");
+        setZadaci(res.data.data || res.data || []);
+      } catch {
+        setZadaci([]);
+      }
+    })();
+  }, [isStudent]);
+
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return items;
@@ -56,6 +77,22 @@ export default function Predaje() {
       return hay.includes(s);
     });
   }, [items, q]);
+
+  async function openFile(predaja) {
+    if (!predaja?.id) return;
+    try {
+      const res = await http.get(`/predaje/${predaja.id}/file`, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([res.data], { type: res.headers["content-type"] });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener");
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (e) {
+      alert(e?.response?.data?.message || "Neuspešno otvaranje fajla.");
+    }
+  }
 
   function openDetails(p) {
     setSelected(p);
@@ -76,6 +113,38 @@ export default function Predaje() {
       alert(e?.response?.data?.message || "Neuspešno");
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function submitPredaja(e) {
+    e.preventDefault();
+    setUploadErr("");
+
+    if (!zadatakId) {
+      setUploadErr("Izaberi zadatak.");
+      return;
+    }
+    if (!file) {
+      setUploadErr("Dodaj fajl za predaju.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("zadatak_id", zadatakId);
+      formData.append("file", file);
+
+      await http.post("/predaje", formData);
+
+      setZadatakId("");
+      setFile(null);
+      setFileInputKey((k) => k + 1);
+      await load();
+    } catch (e2) {
+      setUploadErr(e2?.response?.data?.message || "Greška pri slanju predaje.");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -116,6 +185,45 @@ export default function Predaje() {
     <div style={{ padding: 16, display: "grid", gap: 12 }}>
       <h2>{isAdmin ? "Predaje" : "Moje predaje"}</h2>
 
+      {isStudent && (
+        <Card>
+          <h3>Nova predaja</h3>
+          <form onSubmit={submitPredaja} style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "grid", gap: 6 }}>
+              <label>Zadatak</label>
+              <select
+                value={zadatakId}
+                onChange={(e) => setZadatakId(e.target.value)}
+                style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd" }}
+              >
+                <option value="">-- Izaberi zadatak --</option>
+                {zadaci.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.naslov}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: "grid", gap: 6 }}>
+              <label>Fajl rada</label>
+              <input
+                key={fileInputKey}
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,.zip"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+              />
+            </div>
+
+            {uploadErr && <div style={{ color: "crimson" }}>{uploadErr}</div>}
+
+            <Button type="submit" disabled={uploading || !zadatakId || !file}>
+              {uploading ? "Šaljem..." : "Pošalji predaju"}
+            </Button>
+          </form>
+        </Card>
+      )}
+
       <div style={{ maxWidth: 420 }}>
         <Input
           placeholder="Pretraga (id/status/komentar/naslov/email)..."
@@ -140,10 +248,20 @@ export default function Predaje() {
             <div style={{ display: "grid", gap: 8, alignContent: "start" }}>
               <Button onClick={() => openDetails(p)}>Detalji</Button>
 
-              {isProfesor && (
-                <Button onClick={() => pokreniPlagijat(p.id)} disabled={busyId === p.id}>
-                  {busyId === p.id ? "Proveravam..." : "Proveri plagijat"}
-                </Button>
+              {(isProfesor || isAdmin) && (
+                <>
+                  {p.file_path && (
+                    <Button onClick={() => openFile(p)}>
+                      Otvori rad
+                    </Button>
+                  )}
+
+                  {isProfesor && (
+                    <Button onClick={() => pokreniPlagijat(p.id)} disabled={busyId === p.id}>
+                      {busyId === p.id ? "Proveravam..." : "Proveri plagijat"}
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -162,6 +280,15 @@ export default function Predaje() {
             <div><b>Zadatak:</b> {selected.zadatak?.naslov ?? "-"}</div>
             <div><b>Status:</b> {selected.status ?? "-"}</div>
             <div><b>Komentar:</b> {selected.komentar ?? "-"}</div>
+
+            {(isProfesor || isAdmin) && selected.file_path && (
+              <div>
+                <b>Rad:</b>{" "}
+                <Button onClick={() => openFile(selected)}>
+                  Otvori fajl
+                </Button>
+              </div>
+            )}
 
             {isProfesor && (
               <div style={{ borderTop: "1px solid #eee", paddingTop: 12, display: "grid", gap: 8 }}>

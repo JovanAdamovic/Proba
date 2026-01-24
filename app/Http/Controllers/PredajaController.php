@@ -6,6 +6,7 @@ use App\Http\Resources\PredajaResource;
 use App\Models\Predaja;
 use App\Models\Predmet;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -70,7 +71,44 @@ class PredajaController extends Controller
         return new PredajaResource($predaja);
     }
 
+     public function file($id)
+    {
+        $user = auth()->user();
 
+        $predaja = Predaja::with(['student', 'zadatak.predmet', 'proveraPlagijata'])
+            ->findOrFail($id);
+
+        if (!$predaja->file_path) {
+            return response()->json(['message' => 'Predaja nema fajl.'], 404);
+        }
+
+        if ($user->uloga === 'STUDENT' && (int) $predaja->student_id !== (int) $user->id) {
+            return response()->json(['message' => 'Zabranjeno'], 403);
+        }
+
+        if ($user->uloga === 'PROFESOR') {
+            $predmetId = $predaja->zadatak?->predmet_id;
+
+            if (!$predmetId) {
+                return response()->json(['message' => 'Predaja nema vezan predmet.'], 409);
+            }
+
+            $predmetJeNjegov = Predmet::where('id', $predmetId)
+                ->where('profesor_id', $user->id)
+                ->exists();
+
+            if (!$predmetJeNjegov) {
+                return response()->json(['message' => 'Zabranjeno'], 403);
+            }
+        }
+
+        if (!Storage::disk('public')->exists($predaja->file_path)) {
+            return response()->json(['message' => 'Fajl nije pronađen.'], 404);
+        }
+
+        return response()->file(Storage::disk('public')->path($predaja->file_path));
+    }
+    
     public function store(Request $request)
     {
         $user = auth()->user();
