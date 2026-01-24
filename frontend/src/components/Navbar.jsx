@@ -1,9 +1,13 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // ✅ sakrij navbar na login stranici
+  if (location.pathname === "/login") return null;
 
   async function handleLogout() {
     await logout();
@@ -11,7 +15,6 @@ export default function Navbar() {
   }
 
   const isAdmin = user?.uloga === "ADMIN";
-  const isProfesor = user?.uloga === "PROFESOR";
 
   return (
     <div
@@ -25,14 +28,19 @@ export default function Navbar() {
     >
       <Link to="/">Početna</Link>
 
-      {user ? (
+      {user && (
         <>
-          <Link to="/predmeti">{isAdmin ? "Predmeti" : "Moji predmeti"}</Link>
-          <Link to="/zadaci">{isAdmin ? "Zadaci" : "Moji zadaci"}</Link>
-          <Link to="/predaje">{isAdmin ? "Predaje" : "Moje predaje"}</Link>
+          <Link to="/predmeti">
+            {isAdmin ? "Predmeti" : "Moji predmeti"}
+          </Link>
 
-          {/* nema posebne stranice za plagijat (ti to ne želiš) */}
-          {/* profesor dugme za plagijat je u Predaje.jsx, što je OK */}
+          <Link to="/zadaci">
+            {isAdmin ? "Zadaci" : "Moji zadaci"}
+          </Link>
+
+          <Link to="/predaje">
+            {isAdmin ? "Predaje" : "Moje predaje"}
+          </Link>
 
           <div
             style={{
@@ -45,13 +53,10 @@ export default function Navbar() {
             <span>
               {user.ime} ({user.uloga})
             </span>
+
             <button onClick={handleLogout}>Logout</button>
           </div>
         </>
-      ) : (
-        <div style={{ marginLeft: "auto" }}>
-          <Link to="/login">Login</Link>
-        </div>
       )}
     </div>
   );

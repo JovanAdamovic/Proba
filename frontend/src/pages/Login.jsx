@@ -42,7 +42,7 @@ export default function Login() {
       await login(email.trim(), password);
       nav("/");
     } catch (e2) {
-      setErr(e2?.message || "Login nije uspeo");
+    setErr(e2?.response?.data?.message || e2?.message || "Login nije uspeo");
     } finally {
       setBusy(false);
     }
