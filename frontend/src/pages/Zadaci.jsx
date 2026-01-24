@@ -13,6 +13,7 @@ export default function Zadaci() {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [err, setErr] = useState("");
+  const [busyId, setBusyId] = useState(null);
 
   // modal detalji
   const [open, setOpen] = useState(false);
@@ -23,7 +24,7 @@ export default function Zadaci() {
     try {
       const endpoint = isAdmin ? "/zadaci" : "/zadaci/moji";
       const res = await http.get(endpoint);
-      setItems(res.data.data || res.data);
+      setItems(res.data.data || res.data || []);
     } catch (e) {
       setErr(e?.response?.data?.message || "Greška pri učitavanju");
     }
@@ -37,6 +38,7 @@ export default function Zadaci() {
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return items;
+
     return items.filter((z) => {
       const hay = `${z.naslov ?? ""} ${z.opis ?? ""} ${z.rok_predaje ?? ""}`.toLowerCase();
       return hay.includes(s);
@@ -46,6 +48,20 @@ export default function Zadaci() {
   function openDetails(z) {
     setSelected(z);
     setOpen(true);
+  }
+
+  // ✅ ADMIN brisanje zadatka (bez potvrde)
+  async function obrisiZadatak(id) {
+    if (!isAdmin) return;
+    setBusyId(id);
+    try {
+      await http.delete(`/zadaci/${id}`);
+      await load();
+    } catch (e) {
+      alert(e?.response?.data?.message || "Greška pri brisanju zadatka");
+    } finally {
+      setBusyId(null);
+    }
   }
 
   return (
@@ -71,8 +87,14 @@ export default function Zadaci() {
               <div style={{ fontSize: 13, color: "#555" }}>{z.opis}</div>
             </div>
 
-            <div>
+            <div style={{ display: "grid", gap: 8, alignContent: "start" }}>
               <Button onClick={() => openDetails(z)}>Detalji</Button>
+
+              {isAdmin && (
+                <Button onClick={() => obrisiZadatak(z.id)} disabled={busyId === z.id}>
+                  {busyId === z.id ? "Brišem..." : "Obriši"}
+                </Button>
+              )}
             </div>
           </div>
         </Card>
@@ -80,7 +102,11 @@ export default function Zadaci() {
 
       {!err && filtered.length === 0 && <div>Nema podataka.</div>}
 
-      <Modal open={open} title={selected ? `Zadatak #${selected.id}` : "Zadatak"} onClose={() => setOpen(false)}>
+      <Modal
+        open={open}
+        title={selected ? `Zadatak #${selected.id}` : "Zadatak"}
+        onClose={() => setOpen(false)}
+      >
         {selected && (
           <div style={{ display: "grid", gap: 8 }}>
             <div><b>Naslov:</b> {selected.naslov}</div>

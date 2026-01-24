@@ -74,12 +74,13 @@ export default function Predaje() {
 
     return items.filter((p) => {
       const hay =
-        `${p.id} ${p.status ?? ""} ${p.komentar ?? ""} ${p.zadatak?.naslov ?? ""} ${p.student?.email ?? ""}`.toLowerCase();
+        `${p.id} ${p.status ?? ""} ${p.komentar ?? ""} ${p.zadatak?.naslov ?? ""} ${
+          p.student?.email ?? ""
+        }`.toLowerCase();
       return hay.includes(s);
     });
   }, [items, q]);
 
-  // ✅ NE BRISATI: koristi se u "Detalji" modalu
   async function openFile(predaja) {
     if (!predaja?.id) return;
     try {
@@ -109,9 +110,22 @@ export default function Predaje() {
     setBusyId(predajaId);
     try {
       await http.post(`/predaje/${predajaId}/provera-plagijata`);
-      await load();
+      await load(); // komentar u predaji se ažurira iz backenda
     } catch (e) {
       alert(e?.response?.data?.message || "Neuspešno");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // ✅ ADMIN brisanje bez potvrde
+  async function obrisiPredaju(id) {
+    setBusyId(id);
+    try {
+      await http.delete(`/predaje/${id}`);
+      await load();
+    } catch (e) {
+      alert(e?.response?.data?.message || "Greška pri brisanju predaje");
     } finally {
       setBusyId(null);
     }
@@ -136,11 +150,9 @@ export default function Predaje() {
       formData.append("zadatak_id", zadatakId);
       formData.append("file", file);
       await http.post("/predaje", formData);
-
       setZadatakId("");
       setFile(null);
       setFileInputKey((k) => k + 1);
-
       await load();
     } catch (e2) {
       setUploadErr(e2?.response?.data?.message || "Greška pri slanju predaje.");
@@ -152,12 +164,12 @@ export default function Predaje() {
   async function sacuvajOcenu() {
     if (!selected) return;
 
+    // front validacija (da zadovolji "JS funkcionalnosti")
     const allowed = ["PREDATO", "OCENJENO", "VRACENO", "ZAKASNJENO"];
     if (!allowed.includes(edit.status)) {
       alert("Status mora biti: " + allowed.join(", "));
       return;
     }
-
     if (edit.ocena !== "") {
       const n = Number(edit.ocena);
       if (Number.isNaN(n) || n < 0 || n > 10) {
@@ -261,14 +273,22 @@ export default function Predaje() {
             <div style={{ display: "grid", gap: 8, alignContent: "start" }}>
               <Button onClick={() => openDetails(p)}>Detalji</Button>
 
-              {/* ✅ IZBAČENO "Otvori rad" dugme iz liste (kartice)
-                  Otvaranje fajla ostaje samo u modalu "Detalji" */}
               {isProfesor && (
                 <Button
                   onClick={() => pokreniPlagijat(p.id)}
                   disabled={busyId === p.id}
                 >
                   {busyId === p.id ? "Proveravam..." : "Proveri plagijat"}
+                </Button>
+              )}
+
+              {/* ✅ samo ADMIN može da briše */}
+              {isAdmin && (
+                <Button
+                  onClick={() => obrisiPredaju(p.id)}
+                  disabled={busyId === p.id}
+                >
+                  {busyId === p.id ? "Brišem..." : "Obriši"}
                 </Button>
               )}
             </div>
@@ -295,7 +315,6 @@ export default function Predaje() {
               <b>Komentar:</b> {selected.komentar ?? "-"}
             </div>
 
-            {/* ✅ Otvori fajl samo u "Detalji" */}
             {(isProfesor || isAdmin) && selected.file_path && (
               <div>
                 <b>Rad:</b>{" "}

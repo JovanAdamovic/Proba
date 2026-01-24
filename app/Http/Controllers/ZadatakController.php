@@ -138,26 +138,24 @@ class ZadatakController extends Controller
     }
 
     public function destroy($id)
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        $zadatak = Zadatak::find($id);
-        if (!$zadatak) {
-            return response()->json(['message' => 'Zadatak nije pronađen.'], 404);
-        }
-
-        if ($user->uloga === 'STUDENT') {
-            return response()->json(['message' => 'Zabranjeno'], 403);
-        }
-
-        if ($user->uloga === 'PROFESOR' && (int)$zadatak->profesor_id !== (int)$user->id) {
-            return response()->json(['message' => 'Zabranjeno'], 403);
-        }
-
-        $zadatak->delete();
-
-        return response()->json(['message' => 'Zadatak je uspešno obrisan.'], 200);
+    // ✅ samo ADMIN
+    if ($user->uloga !== 'ADMIN') {
+        return response()->json(['message' => 'Zabranjeno'], 403);
     }
+
+    $zadatak = Zadatak::find($id);
+    if (!$zadatak) {
+        return response()->json(['message' => 'Zadatak nije pronađen.'], 404);
+    }
+
+    $zadatak->delete();
+
+    return response()->json(['message' => 'Zadatak je uspešno obrisan.'], 200);
+}
+
 
 
     public function moji()
