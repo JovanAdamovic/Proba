@@ -40,8 +40,8 @@ export default function Predaje() {
       const endpoint = isAdmin
         ? "/predaje"
         : isProfesor
-          ? "/predaje/za-moje-predmete"
-          : "/predaje/moje";
+        ? "/predaje/za-moje-predmete"
+        : "/predaje/moje";
 
       const res = await http.get(endpoint);
       setItems(res.data.data || res.data || []);
@@ -73,18 +73,19 @@ export default function Predaje() {
     if (!s) return items;
 
     return items.filter((p) => {
-      const hay = `${p.id} ${p.status ?? ""} ${p.komentar ?? ""} ${p.zadatak?.naslov ?? ""} ${p.student?.email ?? ""}`.toLowerCase();
+      const hay =
+        `${p.id} ${p.status ?? ""} ${p.komentar ?? ""} ${p.zadatak?.naslov ?? ""} ${p.student?.email ?? ""}`.toLowerCase();
       return hay.includes(s);
     });
   }, [items, q]);
 
+  // ✅ NE BRISATI: koristi se u "Detalji" modalu
   async function openFile(predaja) {
     if (!predaja?.id) return;
     try {
       const res = await http.get(`/predaje/${predaja.id}/file`, {
         responseType: "blob",
       });
-
       const blob = new Blob([res.data], { type: res.headers["content-type"] });
       const url = window.URL.createObjectURL(blob);
       window.open(url, "_blank", "noopener");
@@ -108,7 +109,7 @@ export default function Predaje() {
     setBusyId(predajaId);
     try {
       await http.post(`/predaje/${predajaId}/provera-plagijata`);
-      await load(); // komentar u predaji se ažurira iz backenda
+      await load();
     } catch (e) {
       alert(e?.response?.data?.message || "Neuspešno");
     } finally {
@@ -134,12 +135,12 @@ export default function Predaje() {
       const formData = new FormData();
       formData.append("zadatak_id", zadatakId);
       formData.append("file", file);
-
       await http.post("/predaje", formData);
 
       setZadatakId("");
       setFile(null);
       setFileInputKey((k) => k + 1);
+
       await load();
     } catch (e2) {
       setUploadErr(e2?.response?.data?.message || "Greška pri slanju predaje.");
@@ -151,12 +152,12 @@ export default function Predaje() {
   async function sacuvajOcenu() {
     if (!selected) return;
 
-    // front validacija (da zadovolji "JS funkcionalnosti")
     const allowed = ["PREDATO", "OCENJENO", "VRACENO", "ZAKASNJENO"];
     if (!allowed.includes(edit.status)) {
       alert("Status mora biti: " + allowed.join(", "));
       return;
     }
+
     if (edit.ocena !== "") {
       const n = Number(edit.ocena);
       if (Number.isNaN(n) || n < 0 || n > 10) {
@@ -194,7 +195,11 @@ export default function Predaje() {
               <select
                 value={zadatakId}
                 onChange={(e) => setZadatakId(e.target.value)}
-                style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd" }}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #ddd",
+                }}
               >
                 <option value="">-- Izaberi zadatak --</option>
                 {zadaci.map((z) => (
@@ -236,9 +241,17 @@ export default function Predaje() {
 
       {filtered.map((p) => (
         <Card key={p.id}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
             <div style={{ display: "grid", gap: 4 }}>
-              <div><b>Predaja #{p.id}</b></div>
+              <div>
+                <b>Predaja #{p.id}</b>
+              </div>
               <div>Status: {p.status}</div>
               <div>Ocena: {p.ocena ?? "-"}</div>
               <div>Komentar: {p.komentar ?? "-"}</div>
@@ -248,20 +261,15 @@ export default function Predaje() {
             <div style={{ display: "grid", gap: 8, alignContent: "start" }}>
               <Button onClick={() => openDetails(p)}>Detalji</Button>
 
-              {(isProfesor || isAdmin) && (
-                <>
-                  {p.file_path && (
-                    <Button onClick={() => openFile(p)}>
-                      Otvori rad
-                    </Button>
-                  )}
-
-                  {isProfesor && (
-                    <Button onClick={() => pokreniPlagijat(p.id)} disabled={busyId === p.id}>
-                      {busyId === p.id ? "Proveravam..." : "Proveri plagijat"}
-                    </Button>
-                  )}
-                </>
+              {/* ✅ IZBAČENO "Otvori rad" dugme iz liste (kartice)
+                  Otvaranje fajla ostaje samo u modalu "Detalji" */}
+              {isProfesor && (
+                <Button
+                  onClick={() => pokreniPlagijat(p.id)}
+                  disabled={busyId === p.id}
+                >
+                  {busyId === p.id ? "Proveravam..." : "Proveri plagijat"}
+                </Button>
               )}
             </div>
           </div>
@@ -277,41 +285,62 @@ export default function Predaje() {
       >
         {selected && (
           <div style={{ display: "grid", gap: 10 }}>
-            <div><b>Zadatak:</b> {selected.zadatak?.naslov ?? "-"}</div>
-            <div><b>Status:</b> {selected.status ?? "-"}</div>
-            <div><b>Komentar:</b> {selected.komentar ?? "-"}</div>
+            <div>
+              <b>Zadatak:</b> {selected.zadatak?.naslov ?? "-"}
+            </div>
+            <div>
+              <b>Status:</b> {selected.status ?? "-"}
+            </div>
+            <div>
+              <b>Komentar:</b> {selected.komentar ?? "-"}
+            </div>
 
+            {/* ✅ Otvori fajl samo u "Detalji" */}
             {(isProfesor || isAdmin) && selected.file_path && (
               <div>
                 <b>Rad:</b>{" "}
-                <Button onClick={() => openFile(selected)}>
-                  Otvori fajl
-                </Button>
+                <Button onClick={() => openFile(selected)}>Otvori fajl</Button>
               </div>
             )}
 
             {isProfesor && (
-              <div style={{ borderTop: "1px solid #eee", paddingTop: 12, display: "grid", gap: 8 }}>
+              <div
+                style={{
+                  borderTop: "1px solid #eee",
+                  paddingTop: 12,
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
                 <div style={{ fontWeight: 700 }}>Ocenjivanje (profesor)</div>
 
                 <Input
                   placeholder="Status (PREDATO/OCENJENO/VRACENO/ZAKASNJENO)"
                   value={edit.status}
-                  onChange={(e) => setEdit((x) => ({ ...x, status: e.target.value }))}
+                  onChange={(e) =>
+                    setEdit((x) => ({ ...x, status: e.target.value }))
+                  }
                 />
                 <Input
                   placeholder="Ocena (0-10)"
                   value={edit.ocena}
-                  onChange={(e) => setEdit((x) => ({ ...x, ocena: e.target.value }))}
+                  onChange={(e) =>
+                    setEdit((x) => ({ ...x, ocena: e.target.value }))
+                  }
                 />
                 <Input
                   placeholder="Komentar"
                   value={edit.komentar}
-                  onChange={(e) => setEdit((x) => ({ ...x, komentar: e.target.value }))}
+                  onChange={(e) =>
+                    setEdit((x) => ({ ...x, komentar: e.target.value }))
+                  }
                 />
 
                 <div style={{ display: "flex", gap: 8 }}>
-                  <Button onClick={sacuvajOcenu} disabled={busyId === selected.id}>
+                  <Button
+                    onClick={sacuvajOcenu}
+                    disabled={busyId === selected.id}
+                  >
                     {busyId === selected.id ? "Čuvam..." : "Sačuvaj"}
                   </Button>
                   <Button onClick={() => setOpen(false)}>Zatvori</Button>
