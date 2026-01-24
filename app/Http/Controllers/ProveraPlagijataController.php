@@ -137,85 +137,103 @@ class ProveraPlagijataController extends Controller
 
 
     public function pokreni($predajaId)
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        if ($user->uloga !== 'PROFESOR') {
-            return response()->json(['message' => 'Zabranjeno'], 403);
+    // samo profesor
+    if ($user->uloga !== 'PROFESOR') {
+        return response()->json(['message' => 'Zabranjeno'], 403);
+    }
+
+    $predaja = Predaja::with(['zadatak.predmet'])->findOrFail($predajaId);
+
+    $predmetId = $predaja->zadatak?->predmet_id;
+
+    $ok = Predmet::where('id', $predmetId)
+        ->where('profesor_id', $user->id)
+        ->exists();
+
+    if (!$ok) {
+        return response()->json(['message' => 'Zabranjeno'], 403);
+    }
+
+    // ako već postoji provera, samo vrati + (ako komentar nema info) dopiši
+    $postojeca = ProveraPlagijata::where('predaja_id', $predajaId)->first();
+    if ($postojeca) {
+        $line = "Provera plagijata: {$postojeca->procenat_slicnosti}% ({$postojeca->status})";
+
+        $trenutni = $predaja->komentar ?? '';
+        if (stripos($trenutni, 'Provera plagijata:') === false) {
+            $novi = trim($trenutni);
+            $novi = $novi ? ($novi . "\n" . $line) : $line;
+            $predaja->update(['komentar' => $novi]);
         }
-
-        $predaja = Predaja::with(['zadatak.predmet'])->findOrFail($predajaId);
-
-        $predmetId = $predaja->zadatak?->predmet_id;
-
-        $ok = Predmet::where('id', $predmetId)
-            ->where('profesor_id', $user->id)
-            ->exists();
-
-        if (!$ok) {
-            return response()->json(['message' => 'Zabranjeno'], 403);
-        }
-
-        $postojeca = ProveraPlagijata::where('predaja_id', $predajaId)->first();
-        if ($postojeca) {
-            return response()->json([
-                'predaja_id' => $predajaId,
-                'procenat_slicnosti' => $postojeca->procenat_slicnosti,
-                'status' => $postojeca->status,
-            ], 200);
-        }
-
-        $apiUrl = config('services.plagiarism_api.url');
-        $apiToken = config('services.plagiarism_api.token');
-
-        if (!$apiUrl) {
-            return response()->json(['message' => 'Plagiarism API nije konfigurisan.'], 500);
-        }
-
-        $payload = [
-            'predaja_id' => $predaja->id,
-            'file_path' => $predaja->file_path,
-            'student_id' => $predaja->student_id,
-            'zadatak_id' => $predaja->zadatak_id,
-        ];
-
-        $request = Http::timeout(15);
-        if ($apiToken) {
-            $request = $request->withToken($apiToken);
-        }
-
-        $response = $request->post($apiUrl, $payload);
-
-        if (!$response->successful()) {
-            return response()->json([
-                'message' => 'Provera plagijata nije uspela.',
-                'status' => $response->status(),
-            ], 502);
-        }
-
-        $data = $response->json();
-        $procenat = $data['procenat_slicnosti'] ?? $data['similarity'] ?? null;
-
-        if ($procenat === null) {
-            return response()->json([
-                'message' => 'Nevažeći odgovor API-ja za plagijat.',
-            ], 502);
-        }
-
-        $provera = ProveraPlagijata::create([
-            'predaja_id' => $predajaId,
-            'procenat_slicnosti' => $procenat,
-            'status' => 'ZAVRSENO',
-        ]);
-
-        $predaja->update([
-            'komentar' => "Provera plagijata: {$provera->procenat_slicnosti}% ({$provera->status})"
-        ]);
 
         return response()->json([
-            'predaja_id' => $predajaId,
-            'procenat_slicnosti' => $provera->procenat_slicnosti,
-            'status' => $provera->status,
-        ], 201);
+            'predaja_id' => (int) $predajaId,
+            'procenat_slicnosti' => (float) $postojeca->procenat_slicnosti,
+            'status' => $postojeca->status,
+        ], 200);
     }
+
+    $apiUrl = config('services.plagiarism_api.url');
+    $apiToken = config('services.plagiarism_api.token');
+
+    if (!$apiUrl) {
+        return response()->json(['message' => 'Plagiarism API nije konfigurisan.'], 500);
+    }
+
+    $payload = [
+        'predaja_id' => $predaja->id,
+        'file_path' => $predaja->file_path,
+        'student_id' => $predaja->student_id,
+        'zadatak_id' => $predaja->zadatak_id,
+    ];
+
+    $request = Http::timeout(15);
+    if ($apiToken) {
+        $request = $request->withToken($apiToken);
+    }
+
+    $response = $request->post($apiUrl, $payload);
+
+    if (!$response->successful()) {
+        return response()->json([
+            'message' => 'Provera plagijata nije uspela.',
+            'status' => $response->status(),
+        ], 502);
+    }
+
+    $data = $response->json();
+    $procenat = $data['procenat_slicnosti'] ?? $data['similarity'] ?? null;
+
+    if ($procenat === null) {
+        return response()->json([
+            'message' => 'Nevažeći odgovor API-ja za plagijat.',
+        ], 502);
+    }
+
+    $provera = ProveraPlagijata::create([
+        'predaja_id' => $predajaId,
+        'procenat_slicnosti' => $procenat,
+        'status' => 'ZAVRSENO',
+    ]);
+
+    // ✅ dopiši rezultat u komentar (admin/student vide ovde)
+    $line = "Provera plagijata: {$provera->procenat_slicnosti}% ({$provera->status})";
+    $trenutni = $predaja->komentar ?? '';
+    $novi = trim($trenutni);
+    $novi = $novi ? ($novi . "\n" . $line) : $line;
+
+    $predaja->update([
+        'komentar' => $novi
+    ]);
+
+    return response()->json([
+        'predaja_id' => (int) $predajaId,
+        'procenat_slicnosti' => (float) $provera->procenat_slicnosti,
+        'status' => $provera->status,
+    ], 201);
+}
+
 }

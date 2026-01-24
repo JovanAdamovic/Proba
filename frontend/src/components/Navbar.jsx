@@ -10,22 +10,41 @@ export default function Navbar() {
     navigate("/login");
   }
 
+  const isAdmin = user?.uloga === "ADMIN";
+  const isProfesor = user?.uloga === "PROFESOR";
+
   return (
-    <div style={{ padding: 12, borderBottom: "1px solid #ddd", display: "flex", gap: 12 }}>
-      <Link to="/">Pocetna</Link>
+    <div
+      style={{
+        padding: 12,
+        borderBottom: "1px solid #ddd",
+        display: "flex",
+        gap: 12,
+        alignItems: "center",
+      }}
+    >
+      <Link to="/">Početna</Link>
 
       {user ? (
         <>
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/predmeti">Predmeti</Link>
-          <Link to="/zadaci">Zadaci</Link>
-          <Link to="/predaje">Predaje</Link>
+          <Link to="/predmeti">{isAdmin ? "Predmeti" : "Moji predmeti"}</Link>
+          <Link to="/zadaci">{isAdmin ? "Zadaci" : "Moji zadaci"}</Link>
+          <Link to="/predaje">{isAdmin ? "Predaje" : "Moje predaje"}</Link>
 
-          {/* profesor-only */}
-          {user.uloga === "PROFESOR" && <Link to="/provere">Provere plagijata</Link>}
+          {/* nema posebne stranice za plagijat (ti to ne želiš) */}
+          {/* profesor dugme za plagijat je u Predaje.jsx, što je OK */}
 
-          <div style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>
-            <span>{user.ime} ({user.uloga})</span>
+          <div
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+            }}
+          >
+            <span>
+              {user.ime} ({user.uloga})
+            </span>
             <button onClick={handleLogout}>Logout</button>
           </div>
         </>
