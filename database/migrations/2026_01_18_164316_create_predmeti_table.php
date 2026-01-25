@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
        Schema::create('predmeti', function (Blueprint $table) {
+        $table->engine = 'InnoDB';
         $table->id();
         $table->foreignId('profesor_id')->nullable()
         ->constrained('users')->nullOnDelete();

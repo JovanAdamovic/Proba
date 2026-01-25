@@ -2,20 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\PredmetResource;
 use App\Http\Resources\ZadatakResource;
 use App\Models\Predmet;
 use App\Models\Zadatak;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class ZadatakController extends Controller
 {
     public function index()
     {
-        /* return ZadatakResource::collection(
-            Zadatak::with(['predmet', 'profesor'])->get()
-        ); */
         return $this->moji();
     }
 
@@ -33,14 +30,13 @@ class ZadatakController extends Controller
         }
 
         if ($user->uloga === 'PROFESOR') {
-            if ($zadatak->profesor_id !== $user->id) {
+            if ((int)$zadatak->profesor_id !== (int)$user->id) {
                 return response()->json(['message' => 'Zabranjeno'], 403);
             }
         }
 
         return new ZadatakResource($zadatak);
     }
-
 
     public function store(Request $request)
     {
@@ -51,31 +47,38 @@ class ZadatakController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'predmet_id'   => 'required|exists:predmeti,id',
-            'naslov'       => 'required|string|max:255',
-            'opis'         => 'nullable|string',
-            'rok_predaje'  => 'required|date',
+            'predmet_id'  => 'required|exists:predmeti,id',
+            'naslov'      => 'required|string|max:255',
+            'opis'        => 'nullable|string',
+            'rok_predaje' => 'required|date',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validacija nije prošla.',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
-        // ako je profesor, predmet mora biti njegov
+        // ako je profesor, predmet mora biti njegov (profesor_id ili pivot profesori ako postoji)
         if ($user->uloga === 'PROFESOR') {
-            $ok = Predmet::where('id', $request->predmet_id)
-                ->where('profesor_id', $user->id)
-                ->exists();
+            $query = Predmet::where('id', $request->predmet_id)
+                ->where('profesor_id', $user->id);
+
+            if (Schema::hasTable('predmet_profesor')) {
+                $query->orWhereHas('profesori', function ($sub) use ($user) {
+                    $sub->where('users.id', $user->id);
+                });
+            }
+
+            $ok = $query->exists();
 
             if (!$ok) return response()->json(['message' => 'Zabranjeno'], 403);
         }
 
         $zadatak = Zadatak::create([
             'predmet_id'  => $request->predmet_id,
-            'profesor_id' => $user->id, // bitno!
+            'profesor_id' => $user->id, // bitno: autor zadatka
             'naslov'      => $request->naslov,
             'opis'        => $request->opis,
             'rok_predaje' => $request->rok_predaje,
@@ -83,10 +86,9 @@ class ZadatakController extends Controller
 
         return response()->json([
             'message' => 'Zadatak je uspešno kreiran.',
-            'data' => new ZadatakResource($zadatak->load(['predmet', 'profesor']))
+            'data'    => new ZadatakResource($zadatak->load(['predmet', 'profesor'])),
         ], 201);
     }
-
 
     public function update(Request $request, $id)
     {
@@ -107,24 +109,31 @@ class ZadatakController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'predmet_id'   => 'sometimes|exists:predmeti,id',
-            'naslov'       => 'sometimes|string|max:255',
-            'opis'         => 'sometimes|nullable|string',
-            'rok_predaje'  => 'sometimes|date',
+            'predmet_id'  => 'sometimes|exists:predmeti,id',
+            'naslov'      => 'sometimes|string|max:255',
+            'opis'        => 'sometimes|nullable|string',
+            'rok_predaje' => 'sometimes|date',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validacija nije prošla.',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
-        // Ako profesor menja predmet_id -> novi predmet mora biti njegov
+        // Ako profesor menja predmet_id -> novi predmet mora biti njegov (profesor_id ili pivot profesori ako postoji)
         if ($user->uloga === 'PROFESOR' && $request->has('predmet_id')) {
-            $ok = Predmet::where('id', $request->predmet_id)
-                ->where('profesor_id', $user->id)
-                ->exists();
+            $query = Predmet::where('id', $request->predmet_id)
+                ->where('profesor_id', $user->id);
+
+            if (Schema::hasTable('predmet_profesor')) {
+                $query->orWhereHas('profesori', function ($sub) use ($user) {
+                    $sub->where('users.id', $user->id);
+                });
+            }
+
+            $ok = $query->exists();
 
             if (!$ok) return response()->json(['message' => 'Zabranjeno'], 403);
         }
@@ -138,25 +147,23 @@ class ZadatakController extends Controller
     }
 
     public function destroy($id)
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    // ✅ samo ADMIN
-    if ($user->uloga !== 'ADMIN') {
-        return response()->json(['message' => 'Zabranjeno'], 403);
+        // ✅ samo ADMIN
+        if ($user->uloga !== 'ADMIN') {
+            return response()->json(['message' => 'Zabranjeno'], 403);
+        }
+
+        $zadatak = Zadatak::find($id);
+        if (!$zadatak) {
+            return response()->json(['message' => 'Zadatak nije pronađen.'], 404);
+        }
+
+        $zadatak->delete();
+
+        return response()->json(['message' => 'Zadatak je uspešno obrisan.'], 200);
     }
-
-    $zadatak = Zadatak::find($id);
-    if (!$zadatak) {
-        return response()->json(['message' => 'Zadatak nije pronađen.'], 404);
-    }
-
-    $zadatak->delete();
-
-    return response()->json(['message' => 'Zadatak je uspešno obrisan.'], 200);
-}
-
-
 
     public function moji()
     {

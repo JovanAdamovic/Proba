@@ -11,6 +11,7 @@ use App\Http\Controllers\UpisController;
 use App\Http\Controllers\ZadatakController;
 use App\Http\Controllers\PredajaController;
 use App\Http\Controllers\ProveraPlagijataController;
+use App\Http\Controllers\UserController;
 
 Route::controller(AuthController::class)->group(function () {
     Route::post('/login', 'login');
@@ -21,6 +22,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me', fn (Request $request) => response()->json($request->user()));
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::get('/users', [UserController::class, 'index']);
 
     // "moje" rute (filterisane po ulozi)
     Route::get('/predmeti/moji', [PredmetController::class, 'moji']);

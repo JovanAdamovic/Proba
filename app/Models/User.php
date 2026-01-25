@@ -73,6 +73,6 @@ class User extends Authenticatable
 
     public function predmetiKojePredaje()
     {
-        return $this->hasMany(Predmet::class, 'profesor_id');
+        return $this->belongsToMany(Predmet::class, 'predmet_profesor', 'profesor_id', 'predmet_id');
     }
 }
