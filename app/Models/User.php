@@ -50,29 +50,37 @@ class User extends Authenticatable
         ];
     }
 
-
+    //jedan Korisnik ima 0 ili vise zadataka, a svaki zadatak zna kog profesora ima preko profesor_id
     public function kreiraniZadaci()
     {
         return $this->hasMany(Zadatak::class, 'profesor_id');
     }
 
+    //jedan Korisnik ima 0 ili vise upisa, a svaki upis zna kog studenta ima preko student_id
     public function upisi()
     {
         return $this->hasMany(Upis::class, 'student_id');
     }
 
+    //Jedan user može biti upisan na više predmeta, 
+    //a jedan predmet može imati više usera (studenata).
     public function predmeti()
     {
         return $this->belongsToMany(Predmet::class, 'upisi', 'student_id', 'predmet_id');
     }
 
+    // Jedan user (student) može imati više predaja
+    // Svaka predaja pripada jednom studentu
     public function predaje()
     {
         return $this->hasMany(Predaja::class, 'student_id');
     }
 
+    //Jedan profesor može predavati više predmeta
+    //Jedan predmet može imati više profesora
     public function predmetiKojePredaje()
     {
         return $this->belongsToMany(Predmet::class, 'predmet_profesor', 'profesor_id', 'predmet_id');
     }
+
 }

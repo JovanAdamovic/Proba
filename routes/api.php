@@ -13,17 +13,21 @@ use App\Http\Controllers\PredajaController;
 use App\Http\Controllers\ProveraPlagijataController;
 use App\Http\Controllers\UserController;
 
+
+//Ove dve rute su otvorene svima 
 Route::controller(AuthController::class)->group(function () {
     Route::post('/login', 'login');
     Route::post('/register', 'register'); // ako ti treba
 });
 
+
+//Zaštićene rute(sve unutar ovog bloka zahteva login, mora imati token i $request->user()postoji) 
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::get('/me', fn (Request $request) => response()->json($request->user()));
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', fn (Request $request) => response()->json($request->user())); //ko je trenutno ulogovan
+    Route::post('/logout', [AuthController::class, 'logout']); //briše token, korisnik se odjavljuje
 
-    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users', [UserController::class, 'index']); //Vraća listu korisnika samo adminu
 
     // "moje" rute (filterisane po ulozi)
     Route::get('/predmeti/moji', [PredmetController::class, 'moji']);

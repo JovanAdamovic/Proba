@@ -27,17 +27,19 @@ class Predaja extends Model
     ];
 
 
-
+    //Jedna predaja pripada jednom zadatku
       public function zadatak()
     {
         return $this->belongsTo(Zadatak::class, 'zadatak_id');
     }
 
+    //Jedna predaja pripada jednom studentu
     public function student()
     {
         return $this->belongsTo(User::class, 'student_id');
     }
 
+    //Jedna predaja ima jednu provjeru plagijata
     public function proveraPlagijata()
     {
         return $this->hasOne(ProveraPlagijata::class, 'predaja_id');

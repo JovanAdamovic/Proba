@@ -18,11 +18,13 @@ class Upis extends Model
         'predmet_id',
     ];
 
+    //Jedan upis pripada jednom studentu
     public function student()
     {
         return $this->belongsTo(User::class, 'student_id');
     }
 
+    //Jedan upis pripada jednom predmetu
     public function predmet()
     {
         return $this->belongsTo(Predmet::class, 'predmet_id');

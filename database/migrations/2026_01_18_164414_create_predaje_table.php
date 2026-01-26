@@ -15,14 +15,14 @@ return new class extends Migration
         $table->id();
 
         $table->foreignId('zadatak_id')
-            ->constrained('zadaci')
+            ->constrained('zadaci')// predaje.zadaci.id -> zadaci.id
             ->cascadeOnDelete();
 
         $table->foreignId('student_id')
             ->constrained('users')
             ->cascadeOnDelete();
 
-        $table->enum('status', ['PREDATO', 'OCENJENO', 'VRACENO', 'ZAKASNJENO'])
+        $table->enum('status', ['PREDATO', 'OCENJENO', 'VRAĆENO', 'ZAKAŠNJENO'])
             ->default('PREDATO');
 
         $table->decimal('ocena', 5, 2)->nullable();

@@ -14,13 +14,26 @@ class PredajaController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
-
-        if ($user->uloga === 'ADMIN') {
+        $user = auth()->user(); //auth() je Laravel helper funkcija. 
+                                //vrati Auth guard — čuvara koji zna: ko je ulogovan da li je korisnik prijavljen koji token koristi
+                                // auth()->user() - “Ko je trenutno ulogovan korisnik?” 
+                                //Laravel tada: pročita token (Sanctum) proveri da li je validan iz baze učita korisnika vrati User model 
+                                //👉 rezultat je objekat: App\Models\User
+                                //Sad taj korisnik ide u promenljivu: $user I ti možeš da radiš: $user->id $user->email $user->uloga
+       //Dakle rezultat ovoga gore je $user= App\Models\User
+       
+       
+            if ($user->uloga === 'ADMIN') {
             return PredajaResource::collection(
                 Predaja::with(['student', 'zadatak.predmet', 'proveraPlagijata'])->get()
             );
         }
+        //$user->uloga === 'ADMIN' -- $user → trenutno ulogovani korisnik 
+                                    //uloga → kolona u tabeli users
+                                    //'ADMIN' → vrednost iz baze
+        // Predaja::with(...) --“Radim upit nad tabelom predaje.”
+                                    //Relacije u with() - to su metode u modelu Predaja
+
 
         if ($user->uloga === 'STUDENT') {
             return $this->moje();
@@ -185,7 +198,7 @@ class PredajaController extends Controller
             if (!$predmetJeNjegov) return response()->json(['message' => 'Zabranjeno'], 403);
         }
 
-        $allowedStatus = ['PREDATO', 'OCENJENO', 'VRACENO', 'ZAKASNJENO'];
+        $allowedStatus = ['PREDATO', 'OCENJENO', 'VRAĆENO', 'ZAKAŠNJENO'];
 
         $validator = Validator::make($request->all(), [
 

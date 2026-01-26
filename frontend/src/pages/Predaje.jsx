@@ -165,7 +165,7 @@ export default function Predaje() {
     if (!selected) return;
 
     // front validacija (da zadovolji "JS funkcionalnosti")
-    const allowed = ["PREDATO", "OCENJENO", "VRACENO", "ZAKASNJENO"];
+    const allowed = ["PREDATO", "OCENJENO", "VRAĆENO", "ZAKAŠNJENO"];
     if (!allowed.includes(edit.status)) {
       alert("Status mora biti: " + allowed.join(", "));
       return;
@@ -309,7 +309,22 @@ export default function Predaje() {
               <b>Zadatak:</b> {selected.zadatak?.naslov ?? "-"}
             </div>
             <div>
-              <b>Status:</b> {selected.status ?? "-"}
+              <div>
+                <b>Status:</b>{" "}
+                <select
+                  value={edit.status}
+                  onChange={(e) =>
+                    setEdit({ ...edit, status: e.target.value })
+                  }
+                >
+                  <option value="">Izaberi status</option>
+                  <option value="PREDATO">PREDATO</option>
+                  <option value="OCENJENO">OCENJENO</option>
+                  <option value="VRAĆENO">VRAĆENO</option>
+                  <option value="ZAKAŠNJENO">ZAKAŠNJENO</option>
+
+                </select>
+              </div>
             </div>
             <div>
               <b>Komentar:</b> {selected.komentar ?? "-"}
@@ -334,7 +349,7 @@ export default function Predaje() {
                 <div style={{ fontWeight: 700 }}>Ocenjivanje (profesor)</div>
 
                 <Input
-                  placeholder="Status (PREDATO/OCENJENO/VRACENO/ZAKASNJENO)"
+                  placeholder="Status (PREDATO/OCENJENO/VRAĆENO/ZAKAŠNJENO)"
                   value={edit.status}
                   onChange={(e) =>
                     setEdit((x) => ({ ...x, status: e.target.value }))

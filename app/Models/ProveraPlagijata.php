@@ -21,7 +21,8 @@ class ProveraPlagijata extends Model
         'procenat_slicnosti' => 'decimal:2',
     ];
 
-        public function predaja()
+    //Jedna provera plagijata ima jednu predaju
+    public function predaja()
     {
         return $this->belongsTo(Predaja::class, 'predaja_id');
     }
