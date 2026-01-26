@@ -24,8 +24,8 @@ class PredmetController extends Controller
     {
         $user = auth()->user();
 
-        $hasPivot = Schema::hasTable('predmet_profesor');
-        $relations = ['profesor', 'studenti'];
+        $hasPivot = Schema::hasTable('predmet_profesor'); //Da li postoji tabela predmet_profesor? Rezultat je: true → tabela postoji false → tabela ne postoji
+        $relations = ['profesor', 'studenti']; // $predmet->profesor (jedan profesor) $predmet->studenti (više studenata)
         if ($hasPivot) {
             $relations[] = 'profesori';
         }
@@ -34,12 +34,12 @@ class PredmetController extends Controller
 
         // ADMIN vidi sve
         if ($user->uloga === 'ADMIN') {
-            return new PredmetResource($predmet);
+            return new PredmetResource($predmet);  //$ oznacava nesto konkretno sto postoji u bazi  ($predmet konkretan predmet)
         }
 
         // STUDENT vidi samo predmete na koje je upisan
         if ($user->uloga === 'STUDENT') {
-            $upisan = $user->predmeti()
+            $upisan = $user->predmeti()             //Da li ovaj korisnik ima u bazi bar jedan predmet čiji je id jednak ovom predmetu?
                 ->where('predmeti.id', $predmet->id)
                 ->exists();
 

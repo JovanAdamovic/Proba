@@ -19,6 +19,14 @@ class UserSeeder extends Seeder
             'uloga' => 'PROFESOR',
         ]);
 
+        User::create([
+            'ime' => 'Petar',
+            'prezime' => 'Petrović',
+            'email' => 'profa@fon.rs',
+            'password' => Hash::make('password'),
+            'uloga' => 'PROFESOR',
+        ]);
+
         // STUDENTI
         User::create([
             'ime' => 'Ana',

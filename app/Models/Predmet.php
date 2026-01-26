@@ -39,7 +39,7 @@ class Predmet extends Model
         return $this->belongsTo(User::class, 'profesor_id');
     }
     
-    public function profesori()
+    public function profesori() // povezano sa pivot tabelom
     {
         return $this->belongsToMany(User::class, 'predmet_profesor', 'predmet_id', 'profesor_id');
     }

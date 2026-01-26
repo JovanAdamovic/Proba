@@ -7,9 +7,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class PredmetResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     */
     public function toArray(Request $request): array
     {
         $profesori = collect();
@@ -38,15 +35,34 @@ class PredmetResource extends JsonResource
             ]);
         }
 
+        // ✅ ulogovani profesor (ako je PROFESOR i predaje ovaj predmet)
+        $user = $request->user();
+        $ulogovaniProfesorId = null;
+
+        if ($user && $user->uloga === 'PROFESOR') {
+            $predaje = ((int)$this->profesor_id === (int)$user->id)
+                || $profesori->contains(function ($p) use ($user) {
+                    return (int)$p['id'] === (int)$user->id;
+                });
+
+            $ulogovaniProfesorId = $predaje ? $user->id : null;
+        }
+
         return [
             'id' => $this->id,
             'naziv' => $this->naziv,
             'sifra' => $this->sifra,
             'godina_studija' => $this->godina_studija,
 
-            // dodatno (po codexu)
+            // primary profesor iz baze (ne menja se)
             'profesor_id' => $this->profesor_id,
+
+            // ✅ profesor koji je ulogovan (ako predaje ovaj predmet)
+            'ulogovani_profesor_id' => $ulogovaniProfesorId,
+
+            // lista svih profesora (pivot + profesor_id)
             'profesori' => $profesori->unique('id')->values(),
+
             'studenti' => $this->whenLoaded('studenti', function () {
                 return $this->studenti->map(function ($student) {
                     return [

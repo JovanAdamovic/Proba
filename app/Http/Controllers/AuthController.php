@@ -99,12 +99,13 @@ class AuthController extends Controller
     // POST /api/logout
     public function logout(Request $request)
     {
-        // briše samo trenutni token (onaj iz Bearer header-a)
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
 
-        return response()->json([
-            'message' => 'Uspešno ste se odjavili.',
-        ], 200);
+        if ($user && $user->currentAccessToken()) {
+            $user->currentAccessToken()->delete();
+        }
+
+        return response()->json(['message' => 'Uspešno ste se odjavili.'], 200);
     }
 
     // GET /api/me
