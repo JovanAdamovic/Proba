@@ -81,7 +81,7 @@ export default function Predmeti() {
     });
   }, [items, q]);
 
-  // ✅ ADMIN brisanje predmeta (bez potvrde)
+  // ADMIN brisanje predmeta (bez potvrde)
   async function obrisiPredmet(id) {
     if (!isAdmin) return;
     setBusyId(id);

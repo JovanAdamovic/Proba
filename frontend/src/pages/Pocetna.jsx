@@ -89,9 +89,8 @@ export default function Pocetna() {
       </div>
 
       <Card>
-        <div style={{ fontSize: 14, color: "#444" }}>
-          Ova aplikacija koristi REST API + Sanctum Bearer token. Prikaz podataka
-          je filtriran po ulozi (student/profesor/admin).
+        <div style={{ fontSize: 23, textAlign: "center", color: "#444" }}>
+          Dobrodošli na sajt za Evidenciju radova!
         </div>
       </Card>
     </div>

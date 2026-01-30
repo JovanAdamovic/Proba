@@ -9,7 +9,6 @@ use App\Models\Predmet;
 
 class Upis extends Model
 {
-    use HasFactory;
 
     protected $table = 'upisi';
 

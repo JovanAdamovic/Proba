@@ -79,7 +79,7 @@ export default function Zadaci() {
     setOpen(true);
   }
 
-  // ✅ ADMIN brisanje zadatka (bez potvrde)
+  //  ADMIN brisanje zadatka (bez potvrde)
   async function obrisiZadatak(id) {
     if (!isAdmin) return;
     setBusyId(id);
@@ -93,7 +93,7 @@ export default function Zadaci() {
     }
   }
 
-  // ✅ PROFESOR kreiranje zadatka
+  //  PROFESOR kreiranje zadatka
   async function kreirajZadatak(e) {
     e.preventDefault();
     if (!isProfesor) return;

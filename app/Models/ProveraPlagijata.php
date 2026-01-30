@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProveraPlagijata extends Model
 {
-    use HasFactory;
 
     protected $table = 'provera_plagijata';
 

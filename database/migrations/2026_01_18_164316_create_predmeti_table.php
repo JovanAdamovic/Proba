@@ -25,6 +25,23 @@ return new class extends Migration
     });
     }
 
+
+
+/*kod mene se
+koristi foreign key
+i ON DELETE SET NULL
+To radi samo u InnoDB engine-u
+Ako je MySQL u tom trenutku imao default engine drugačiji (ili si imao stariju konfiguraciju), 
+Laravel bi izbacio grešku tipa:
+errno 150: Foreign key constraint is incorrectly formed
+I tada se skoro uvek uradi:
+$table->engine = 'InnoDB'; 
+da se MySQL „natera“.*/
+
+
+
+
+
     /**
      * Reverse the migrations.
      */

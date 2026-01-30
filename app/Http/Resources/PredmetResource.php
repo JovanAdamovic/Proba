@@ -35,7 +35,7 @@ class PredmetResource extends JsonResource
             ]);
         }
 
-        // ✅ ulogovani profesor (ako je PROFESOR i predaje ovaj predmet)
+        //  ulogovani profesor (ako je PROFESOR i predaje ovaj predmet)
         $user = $request->user();
         $ulogovaniProfesorId = null;
 
@@ -57,7 +57,7 @@ class PredmetResource extends JsonResource
             // primary profesor iz baze (ne menja se)
             'profesor_id' => $this->profesor_id,
 
-            // ✅ profesor koji je ulogovan (ako predaje ovaj predmet)
+            // profesor koji je ulogovan (ako predaje ovaj predmet)
             'ulogovani_profesor_id' => $ulogovaniProfesorId,
 
             // lista svih profesora (pivot + profesor_id)

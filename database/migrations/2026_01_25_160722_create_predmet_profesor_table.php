@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void  //up() pravi izmene u bazi
     {
         Schema::create('predmet_profesor', function (Blueprint $table) {
+            //u sqlu na phpmyadminu pokrenes ovo SHOW VARIABLES LIKE 'default_storage_engine'; i izbaci da je default InnoDB tako da nam ne treba ova linija ispod 
             $table->engine = 'InnoDB';
             $table->id();
             $table->foreignId('predmet_id') //kolona predmet_id povezana sa predmeti.id, 

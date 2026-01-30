@@ -118,7 +118,7 @@ export default function Predaje() {
     }
   }
 
-  // ✅ ADMIN brisanje bez potvrde
+  //  ADMIN brisanje bez potvrde
   async function obrisiPredaju(id) {
     setBusyId(id);
     try {
@@ -282,7 +282,7 @@ export default function Predaje() {
                 </Button>
               )}
 
-              {/* ✅ samo ADMIN može da briše */}
+              {/*  samo ADMIN može da briše */}
               {isAdmin && (
                 <Button
                   onClick={() => obrisiPredaju(p.id)}
