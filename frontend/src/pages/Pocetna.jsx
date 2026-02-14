@@ -56,6 +56,7 @@ export default function Pocetna() {
   const [calendarData, setCalendarData] = useState([]);
   const [calendarConnected, setCalendarConnected] = useState(false);
   const [focusDate, setFocusDate] = useState(new Date());
+  const [todayMeta, setTodayMeta] = useState(null);
 
   useEffect(() => {
     if (!user?.uloga) return;
@@ -95,12 +96,27 @@ export default function Pocetna() {
         const res = await http.get("/kalendar/rokovi");
         setCalendarData(res.data?.data || []);
         setCalendarConnected(Boolean(res.data?.meta?.google_calendar_connected));
+        setTodayMeta(res.data?.meta?.today || null);
       } catch {
         setCalendarData([]);
         setCalendarConnected(false);
+        setTodayMeta(null);
       }
     })();
   }, [showCalendar]);
+
+  const todayLabel = useMemo(() => {
+    if (todayMeta?.day_name && todayMeta?.date) {
+      return `${todayMeta.day_name}, ${todayMeta.date}`;
+    }
+
+    return new Date().toLocaleDateString("sr-RS", {
+      weekday: "long",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  }, [todayMeta]);
 
   const monthGrid = useMemo(() => getMonthGrid(focusDate), [focusDate]);
 
@@ -221,6 +237,10 @@ export default function Pocetna() {
 
           <div style={{ fontWeight: 700, textTransform: "capitalize", marginBottom: 8 }}>
             {monthLabel}
+          </div>
+
+          <div style={{ fontSize: 14, color: "#333", marginBottom: 8 }}>
+            Danas je: <b style={{ textTransform: "capitalize" }}>{todayLabel}</b>
           </div>
 
           <div style={{ fontSize: 13, color: "#666", marginBottom: 10 }}>

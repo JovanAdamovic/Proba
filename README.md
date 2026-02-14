@@ -57,3 +57,36 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Google Calendar integracija (rokovi na početnoj)
+
+Aplikacija ima endpoint `GET /api/kalendar/rokovi` koji spaja:
+
+- interne rokove iz baze (`zadaci.rok_predaje`) i
+- događaje iz Google Calendar API-ja.
+
+Frontend (početna stranica za STUDENT i PROFESOR) prikazuje:
+
+- mesečni kalendar rokova,
+- status da li je Google Calendar povezan,
+- informaciju koji je danas dan.
+
+### Podešavanje
+
+U `.env` fajlu popuni:
+
+```env
+GOOGLE_CALENDAR_ID=primary
+GOOGLE_CALENDAR_CLIENT_ID=
+GOOGLE_CALENDAR_CLIENT_SECRET=
+GOOGLE_CALENDAR_REFRESH_TOKEN=
+GOOGLE_CALENDAR_TIMEZONE=Europe/Belgrade
+```
+
+Nakon izmene pokreni:
+
+```bash
+php artisan config:clear
+```
+
+Ako kredencijali nisu podešeni ili Google API nije dostupan, aplikacija će i dalje raditi i prikazivaće samo interne rokove.

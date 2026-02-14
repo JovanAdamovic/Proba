@@ -61,6 +61,10 @@ class KalendarController extends Controller
             'data' => $rokovi,
             'meta' => [
                 'google_calendar_connected' => $this->googleCalendarConfigured(),
+                'today' => [
+                    'date' => $now->toDateString(),
+                    'day_name' => $now->locale('sr')->isoFormat('dddd'),
+                ],
             ],
         ]);
     }
@@ -88,6 +92,7 @@ class KalendarController extends Controller
                         'orderBy' => 'startTime',
                         'timeMin' => $now->toIso8601String(),
                         'maxResults' => 50,
+                        'timeZone' => config('services.google_calendar.timezone', 'Europe/Belgrade'),
                     ]
                 );
 
