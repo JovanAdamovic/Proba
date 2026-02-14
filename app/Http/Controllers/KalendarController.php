@@ -15,7 +15,7 @@ class KalendarController extends Controller
     {
         $user = $request->user();
 
-        if (!in_array($user->uloga, ['STUDENT', 'PROFESOR', 'ADMIN'])) {
+        if (!in_array($user->uloga, ['STUDENT', 'PROFESOR', 'ADMIN'], true)) {
             return response()->json(['message' => 'Zabranjeno'], 403);
         }
 
@@ -50,7 +50,8 @@ class KalendarController extends Controller
             ];
         })->values();
 
-        $eksterniRokovi = $this->fetchGoogleCalendarEvents($now);
+        // ✅ EKSTERNO: praznici preko Nager.Date
+        $eksterniRokovi = $this->fetchPublicHolidayEvents($now);
 
         $rokovi = $lokalniRokovi
             ->concat($eksterniRokovi)
@@ -60,71 +61,72 @@ class KalendarController extends Controller
         return response()->json([
             'data' => $rokovi,
             'meta' => [
-                'google_calendar_connected' => $this->googleCalendarConfigured(),
+                // ✅ kao u diff-u
+                'external_calendar_provider' => 'nager_date_public_holidays',
+                'external_calendar_connected' => $this->calendarApiConfigured(),
+
+                // ✅ zadrzano za frontend
+                'today' => [
+                    'date' => $now->toDateString(),
+                    'day_name' => $now->locale('sr')->isoFormat('dddd'),
+                ],
             ],
         ]);
     }
 
-    private function fetchGoogleCalendarEvents(Carbon $now)
+    private function fetchPublicHolidayEvents(Carbon $now)
     {
-        if (!$this->googleCalendarConfigured()) {
+        if (!$this->calendarApiConfigured()) {
             return collect();
         }
 
-        $calendarId = config('services.google_calendar.calendar_id');
-        $accessToken = $this->getGoogleAccessToken();
-
-        if (!$accessToken) {
-            return collect();
-        }
+        $countryCode = strtoupper(config('services.calendar_api.country_code', 'RS'));
+        $year = $now->year;
+        $cacheKey = sprintf('calendar_holidays_%s_%s', $countryCode, $year);
 
         try {
-            $response = Http::timeout(8)
-                ->withToken($accessToken)
-                ->get(
-                    sprintf('https://www.googleapis.com/calendar/v3/calendars/%s/events', urlencode($calendarId)),
-                    [
-                        'singleEvents' => 'true',
-                        'orderBy' => 'startTime',
-                        'timeMin' => $now->toIso8601String(),
-                        'maxResults' => 50,
-                    ]
-                );
+            $items = Cache::remember($cacheKey, now()->addHours(12), function () use ($countryCode, $year) {
+                $response = Http::timeout(8)
+                    ->get(sprintf('https://date.nager.at/api/v3/PublicHolidays/%s/%s', $year, $countryCode));
 
-            if (!$response->successful()) {
-                Log::warning('Google Calendar events fetch failed', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
+                if (!$response->successful()) {
+                    Log::warning('Nager.Date events fetch failed', [
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
 
-                return collect();
-            }
+                    return [];
+                }
 
-            $items = $response->json('items', []);
+                return $response->json();
+            });
 
             return collect($items)
                 ->map(function (array $event) {
-                    $start = $event['start']['dateTime'] ?? $event['start']['date'] ?? null;
-                    $end = $event['end']['dateTime'] ?? $event['end']['date'] ?? $start;
-                    $allDay = isset($event['start']['date']);
+                    $start = $event['date'] ?? null;
 
                     return [
-                        'id' => 'google-' . ($event['id'] ?? uniqid()),
-                        'source' => 'google_calendar',
-                        'title' => $event['summary'] ?? 'Google Calendar događaj',
-                        'description' => $event['description'] ?? null,
+                        'id' => 'holiday-' . ($event['date'] ?? uniqid()),
+                        'source' => 'external_calendar',
+                        'title' => $event['localName'] ?? ($event['name'] ?? 'Neradni dan'),
+                        'description' => $event['name'] ?? 'Drzavni praznik',
                         'start' => $start ? Carbon::parse($start)->toIso8601String() : null,
-                        'end' => $end ? Carbon::parse($end)->toIso8601String() : null,
-                        'all_day' => $allDay,
+                        'end' => $start ? Carbon::parse($start)->endOfDay()->toIso8601String() : null,
+                        'all_day' => true,
                         'subject' => null,
                         'subject_code' => null,
                         'profesor' => null,
                     ];
                 })
-                ->filter(fn ($event) => !empty($event['start']))
+                ->filter(function ($mapped) use ($now) {
+                    // prikazi samo od danas pa nadalje
+                    return !empty($mapped['start']) &&
+                        Carbon::parse($mapped['start'])->greaterThanOrEqualTo($now->copy()->startOfDay());
+                })
+                ->sortBy('start')
                 ->values();
         } catch (\Throwable $e) {
-            Log::warning('Google Calendar sync failed', [
+            Log::warning('External calendar sync failed', [
                 'message' => $e->getMessage(),
             ]);
 
@@ -132,60 +134,9 @@ class KalendarController extends Controller
         }
     }
 
-    private function getGoogleAccessToken(): ?string
+    private function calendarApiConfigured(): bool
     {
-        $cacheKey = 'google_calendar_access_token';
-        $cachedToken = Cache::get($cacheKey);
-
-        if ($cachedToken) {
-            return $cachedToken;
-        }
-
-        try {
-            $response = Http::asForm()
-                ->timeout(8)
-                ->post('https://oauth2.googleapis.com/token', [
-                    'client_id' => config('services.google_calendar.client_id'),
-                    'client_secret' => config('services.google_calendar.client_secret'),
-                    'refresh_token' => config('services.google_calendar.refresh_token'),
-                    'grant_type' => 'refresh_token',
-                ]);
-
-            if (!$response->successful()) {
-                Log::warning('Google OAuth token refresh failed', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-
-                return null;
-            }
-
-            $accessToken = $response->json('access_token');
-            $expiresIn = (int) $response->json('expires_in', 3600);
-
-            if (!$accessToken) {
-                return null;
-            }
-
-            Cache::put($cacheKey, $accessToken, now()->addSeconds(max($expiresIn - 60, 60)));
-
-            return $accessToken;
-        } catch (\Throwable $e) {
-            Log::warning('Google OAuth token request exception', [
-                'message' => $e->getMessage(),
-            ]);
-
-            return null;
-        }
-    }
-
-    private function googleCalendarConfigured(): bool
-    {
-        return (bool) (
-            config('services.google_calendar.calendar_id') &&
-            config('services.google_calendar.client_id') &&
-            config('services.google_calendar.client_secret') &&
-            config('services.google_calendar.refresh_token')
-        );
+        // minimalno: samo country_code (npr RS)
+        return !empty(config('services.calendar_api.country_code'));
     }
 }
