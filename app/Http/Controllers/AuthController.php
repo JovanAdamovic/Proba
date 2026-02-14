@@ -53,7 +53,7 @@ class AuthController extends Controller
     }
 
     // POST /api/register  (ako ti treba)
-    public function register(Request $request)
+   /*  public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'ime' => ['required', 'string', 'max:100'],
@@ -94,7 +94,7 @@ class AuthController extends Controller
                 'uloga' => $user->uloga,
             ],
         ], 201);
-    }
+    } */
 
     // POST /api/logout
     public function logout(Request $request)

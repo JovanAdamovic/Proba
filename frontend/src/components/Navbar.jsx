@@ -6,7 +6,6 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ sakrij navbar na login stranici
   if (location.pathname === "/login") return null;
 
   async function handleLogout() {

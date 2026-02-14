@@ -173,9 +173,9 @@ export default function Zadaci() {
             </div>
 
             <div style={{ display: "grid", gap: 6 }}>
-              <label>Opis (opciono)</label>
+              <label>Opis</label>
               <Input
-                placeholder="Opis (opciono)"
+                placeholder="Opis"
                 value={form.opis}
                 onChange={(e) => setForm((prev) => ({ ...prev, opis: e.target.value }))}
               />

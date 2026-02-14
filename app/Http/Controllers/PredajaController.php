@@ -14,32 +14,19 @@ class PredajaController extends Controller
 {
     public function index()
     {
-        $user = auth()->user(); //auth() je Laravel helper funkcija. 
-                                //vrati Auth guard — čuvara koji zna: ko je ulogovan da li je korisnik prijavljen koji token koristi
-                                // auth()->user() - “Ko je trenutno ulogovan korisnik?” 
-                                //Laravel tada: pročita token (Sanctum) proveri da li je validan iz baze učita korisnika vrati User model 
-                                //👉 rezultat je objekat: App\Models\User
-                                //Sad taj korisnik ide u promenljivu: $user I ti možeš da radiš: $user->id $user->email $user->uloga
-       //Dakle rezultat ovoga gore je $user= App\Models\User
-       
-       
-            if ($user->uloga === 'ADMIN') {
+
+        $user = auth()->user();
+
+        if ($user->uloga === 'ADMIN') {
             return PredajaResource::collection(
                 Predaja::with(['student', 'zadatak.predmet', 'proveraPlagijata'])->get()
             );
         }
-        //$user->uloga === 'ADMIN' -- $user → trenutno ulogovani korisnik 
-                                    //uloga → kolona u tabeli users
-                                    //'ADMIN' → vrednost iz baze
-        // Predaja::with(...) --“Radim upit nad tabelom predaje.”
-                                    //Relacije u with() - to su metode u modelu Predaja
-
 
         if ($user->uloga === 'STUDENT') {
             return $this->moje();
         }
 
-        // PROFESOR
         return $this->zaMojePredmete();
     }
 
@@ -51,23 +38,19 @@ class PredajaController extends Controller
         $predaja = Predaja::with(['student', 'zadatak.predmet', 'proveraPlagijata'])
             ->findOrFail($id);
 
-        // ADMIN vidi sve
         if ($user->uloga === 'ADMIN') {
             return new PredajaResource($predaja);
         }
 
-        // STUDENT vidi samo svoje predaje
         if ($user->uloga === 'STUDENT') {
             if ((int)$predaja->student_id !== (int)$user->id) {
                 return response()->json(['message' => 'Zabranjeno'], 403);
             }
         }
 
-        // PROFESOR vidi predaje samo za svoje predmete
         if ($user->uloga === 'PROFESOR') {
             $predmetId = $predaja->zadatak?->predmet_id;
 
-            // sigurnosno: ako je nešto polomljeno u relaciji
             if (!$predmetId) {
                 return response()->json(['message' => 'Predaja nema vezan predmet.'], 409);
             }
@@ -84,7 +67,7 @@ class PredajaController extends Controller
         return new PredajaResource($predaja);
     }
 
-     public function file($id)
+    public function file($id)
     {
         $user = auth()->user();
 
@@ -121,7 +104,7 @@ class PredajaController extends Controller
 
         return response()->file(Storage::disk('public')->path($predaja->file_path));
     }
-    
+
     public function store(Request $request)
     {
         $user = auth()->user();
@@ -143,7 +126,6 @@ class PredajaController extends Controller
             ], 422);
         }
 
-        // Proveri da li je student upisan na predmet tog zadatka
         $zadatakId = $request->zadatak_id;
 
         $upisan = $user->predmeti()
@@ -154,7 +136,6 @@ class PredajaController extends Controller
             return response()->json(['message' => 'Zabranjeno'], 403);
         }
 
-        // (opciono) zabrani duplu predaju po zadatku (pošto ima unique u bazi)
         $vecPostoji = Predaja::where('student_id', $user->id)
             ->where('zadatak_id', $zadatakId)
             ->exists();

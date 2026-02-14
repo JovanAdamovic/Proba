@@ -14,7 +14,6 @@ export default function Login() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
-  //  OVO DODAJ OVDE
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => (document.body.style.overflow = "auto");
@@ -77,7 +76,7 @@ export default function Login() {
             {err && <div style={{ color: "crimson" }}>{err}</div>}
 
             <Button type="submit" disabled={!canSubmit || busy}>
-              {busy ? "Ulogujem..." : "Uloguj se"}
+              {busy ? "Prijavljivanje..." : "Uloguj se"}
             </Button>
           </form>
         </Card>

@@ -12,7 +12,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 
   background: #f6f7fb;
-  overflow: auto; /* ✅ normalno skrolovanje */
+  overflow: auto; 
 }
 
 code {

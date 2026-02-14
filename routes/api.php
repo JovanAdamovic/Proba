@@ -12,6 +12,7 @@ use App\Http\Controllers\ZadatakController;
 use App\Http\Controllers\PredajaController;
 use App\Http\Controllers\ProveraPlagijataController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\KalendarController;
 
 
 //Ove dve rute su otvorene svima 
@@ -35,6 +36,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/predaje/moje', [PredajaController::class, 'moje']); // student
     Route::get('/predaje/za-moje-predmete', [PredajaController::class, 'zaMojePredmete']); // profesor
 
+    Route::get('/kalendar/rokovi', [KalendarController::class, 'rokovi']);
+
     // osnovne rute (ali u kontrolerima ograniči šta ko vidi)
     Route::get('/predmeti', [PredmetController::class, 'index']);
     Route::get('/predmeti/{id}', [PredmetController::class, 'show']);
@@ -57,7 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/zadaci/{id}', [ZadatakController::class, 'destroy']);
     Route::put('/predaje/{id}', [PredajaController::class, 'update']); // ocena/komentar/status
 
-    // ✅ Provera plagijata — rute postoje, ali kontroler dozvoljava samo PROFESOR-u
+    //  Provera plagijata — rute postoje, ali kontroler dozvoljava samo PROFESOR-u
     Route::get('/provere-plagijata', [ProveraPlagijataController::class, 'index']);
     Route::get('/provere-plagijata/{id}', [ProveraPlagijataController::class, 'show']);
     Route::post('/predaje/{predajaId}/provera-plagijata', [ProveraPlagijataController::class, 'pokreni']);

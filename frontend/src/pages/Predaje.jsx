@@ -309,21 +309,22 @@ export default function Predaje() {
               <b>Zadatak:</b> {selected.zadatak?.naslov ?? "-"}
             </div>
             <div>
-              <div>
+             <div>
                 <b>Status:</b>{" "}
-                <select
-                  value={edit.status}
-                  onChange={(e) =>
-                    setEdit({ ...edit, status: e.target.value })
-                  }
-                >
-                  <option value="">Izaberi status</option>
-                  <option value="PREDATO">PREDATO</option>
-                  <option value="OCENJENO">OCENJENO</option>
-                  <option value="VRAĆENO">VRAĆENO</option>
-                  <option value="ZAKAŠNJENO">ZAKAŠNJENO</option>
-
-                </select>
+                {(isProfesor) ? (
+                  <select
+                    value={edit.status}
+                    onChange={(e) => setEdit({ ...edit, status: e.target.value })}
+                  >
+                    <option value="">Izaberi status</option>
+                    <option value="PREDATO">PREDATO</option>
+                    <option value="OCENJENO">OCENJENO</option>
+                    <option value="VRAĆENO">VRAĆENO</option>
+                    <option value="ZAKAŠNJENO">ZAKAŠNJENO</option>
+                  </select>
+                ) : (
+                  <span>{selected.status ?? "-"}</span>
+                )}
               </div>
             </div>
             <div>

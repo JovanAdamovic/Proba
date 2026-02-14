@@ -60,7 +60,6 @@ class ZadatakController extends Controller
             ], 422);
         }
 
-        // ako je profesor, predmet mora biti njegov (profesor_id ili pivot profesori ako postoji)
         if ($user->uloga === 'PROFESOR') {
             $query = Predmet::where('id', $request->predmet_id)
                 ->where('profesor_id', $user->id);
@@ -78,7 +77,7 @@ class ZadatakController extends Controller
 
         $zadatak = Zadatak::create([
             'predmet_id'  => $request->predmet_id,
-            'profesor_id' => $user->id, // bitno: autor zadatka
+            'profesor_id' => $user->id, 
             'naslov'      => $request->naslov,
             'opis'        => $request->opis,
             'rok_predaje' => $request->rok_predaje,
@@ -103,7 +102,6 @@ class ZadatakController extends Controller
             return response()->json(['message' => 'Zabranjeno'], 403);
         }
 
-        // PROFESOR sme samo svoje zadatke
         if ($user->uloga === 'PROFESOR' && (int)$zadatak->profesor_id !== (int)$user->id) {
             return response()->json(['message' => 'Zabranjeno'], 403);
         }
@@ -122,7 +120,6 @@ class ZadatakController extends Controller
             ], 422);
         }
 
-        // Ako profesor menja predmet_id -> novi predmet mora biti njegov (profesor_id ili pivot profesori ako postoji)
         if ($user->uloga === 'PROFESOR' && $request->has('predmet_id')) {
             $query = Predmet::where('id', $request->predmet_id)
                 ->where('profesor_id', $user->id);
@@ -150,7 +147,6 @@ class ZadatakController extends Controller
     {
         $user = auth()->user();
 
-        // ✅ samo ADMIN
         if ($user->uloga !== 'ADMIN') {
             return response()->json(['message' => 'Zabranjeno'], 403);
         }
@@ -185,7 +181,6 @@ class ZadatakController extends Controller
             );
         }
 
-        // PROFESOR: samo zadaci koje je on kreirao
         return ZadatakResource::collection(
             Zadatak::with(['predmet', 'profesor'])
                 ->where('profesor_id', $user->id)

@@ -55,83 +55,16 @@ class ProveraPlagijataController extends Controller
 
     public function store(Request $request)
     {
-        /* // ako ti je u migraciji enum, ovde treba da bude isto
-        $allowedStatus = ['U_TOKU', 'ZAVRSENO', 'GRESKA'];
-
-        $validator = Validator::make($request->all(), [
-            'predaja_id' => [
-                'required',
-                'integer',
-                'exists:predaje,id',
-                // ako hoces 1 provera po predaji (preporuka)
-                Rule::unique('provera_plagijata', 'predaja_id'),
-            ],
-            'procenat_slicnosti' => 'nullable|numeric|min:0|max:100',
-            'status' => ['sometimes', Rule::in($allowedStatus)],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validacija nije prošla.',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $provera = ProveraPlagijata::create($validator->validated());
-
-        return response()->json([
-            'message' => 'Provera plagijata je uspešno kreirana.',
-            'data' => new ProveraPlagijataResource($provera->load('predaja')),
-        ], 201); */
         return response()->json(['message' => 'Zabranjeno'], 403);
     }
 
     public function update(Request $request, $id)
     {
-        /* $provera = ProveraPlagijata::find($id);
-        if (!$provera) {
-            return response()->json(['message' => 'Provera nije pronađena.'], 404);
-        }
-
-        $allowedStatus = ['U_TOKU', 'ZAVRSENO', 'GRESKA'];
-
-        $validator = Validator::make($request->all(), [
-            'predaja_id' => [
-                'sometimes',
-                'integer',
-                'exists:predaje,id',
-                Rule::unique('provera_plagijata', 'predaja_id')->ignore($provera->id),
-            ],
-            'procenat_slicnosti' => 'sometimes|numeric|min:0|max:100',
-            'status' => ['sometimes', Rule::in($allowedStatus)],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validacija nije prošla.',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $provera->update($validator->validated());
-
-        return response()->json(
-            new ProveraPlagijataResource($provera->load('predaja')),
-            200
-        ); */
         return response()->json(['message' => 'Zabranjeno'], 403);
     }
 
     public function destroy($id)
     {
-        /* $provera = ProveraPlagijata::find($id);
-        if (!$provera) {
-            return response()->json(['message' => 'Provera nije pronađena.'], 404);
-        }
-
-        $provera->delete();
-
-        return response()->json(['message' => 'Provera je uspešno obrisana.'], 200); */
         return response()->json(['message' => 'Zabranjeno'], 403);
     }
 
@@ -140,7 +73,6 @@ class ProveraPlagijataController extends Controller
 {
     $user = auth()->user();
 
-    // samo profesor
     if ($user->uloga !== 'PROFESOR') {
         return response()->json(['message' => 'Zabranjeno'], 403);
     }
@@ -157,7 +89,6 @@ class ProveraPlagijataController extends Controller
         return response()->json(['message' => 'Zabranjeno'], 403);
     }
 
-    // ako već postoji provera, samo vrati + (ako komentar nema info) dopiši
     $postojeca = ProveraPlagijata::where('predaja_id', $predajaId)->first();
     if ($postojeca) {
         $line = "Provera plagijata: {$postojeca->procenat_slicnosti}% ({$postojeca->status})";
@@ -219,7 +150,6 @@ class ProveraPlagijataController extends Controller
         'status' => 'ZAVRSENO',
     ]);
 
-    // ✅ dopiši rezultat u komentar (admin/student vide ovde)
     $line = "Provera plagijata: {$provera->procenat_slicnosti}% ({$provera->status})";
     $trenutni = $predaja->komentar ?? '';
     $novi = trim($trenutni);
