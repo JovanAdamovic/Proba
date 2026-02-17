@@ -6,6 +6,23 @@ import { useAuth } from "../auth/AuthContext";
 import Button from "../components/Button";
 import Modal from "../components/Modal";
 
+function formatRok(value) {
+  if (!value) return "-";
+
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+
+  // Ako je backend slao samo datum (YYYY-MM-DD), browser ga nekad tretira kao UTC,
+  // pa ga ovako prikazujemo u lokalnom formatu da bude normalno za korisnika.
+  return d.toLocaleString("sr-RS", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function Zadaci() {
   const { user } = useAuth();
   const isAdmin = user?.uloga === "ADMIN";
@@ -79,7 +96,6 @@ export default function Zadaci() {
     setOpen(true);
   }
 
-  //  ADMIN brisanje zadatka (bez potvrde)
   async function obrisiZadatak(id) {
     if (!isAdmin) return;
     setBusyId(id);
@@ -93,7 +109,6 @@ export default function Zadaci() {
     }
   }
 
-  //  PROFESOR kreiranje zadatka
   async function kreirajZadatak(e) {
     e.preventDefault();
     if (!isProfesor) return;
@@ -117,7 +132,6 @@ export default function Zadaci() {
       setForm({ predmetId: "", naslov: "", opis: "", rokPredaje: "" });
       await load();
     } catch (e2) {
-      // ako backend vraća validacione greske u errors
       const msg =
         e2?.response?.data?.message ||
         (e2?.response?.data?.errors
@@ -219,7 +233,7 @@ export default function Zadaci() {
               <div>
                 <b>{z.naslov}</b>
               </div>
-              <div>Rok: {z.rok_predaje}</div>
+              <div>Rok: {formatRok(z.rok_predaje)}</div>
               <div style={{ fontSize: 13, color: "#555" }}>{z.opis}</div>
             </div>
 
@@ -249,7 +263,7 @@ export default function Zadaci() {
               <b>Naslov:</b> {selected.naslov}
             </div>
             <div>
-              <b>Rok:</b> {selected.rok_predaje}
+              <b>Rok:</b> {formatRok(selected.rok_predaje)}
             </div>
             <div>
               <b>Opis:</b> {selected.opis ?? "-"}

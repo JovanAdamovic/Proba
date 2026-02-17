@@ -29,6 +29,32 @@ function startOfWeek(date) {
   return d;
 }
 
+function eventDateKeyFromStart(start) {
+  if (typeof start === "string") {
+    const m = start.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) return m[1];
+  }
+
+  const parsed = new Date(start);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return toKey(parsed);
+}
+
+function eventTimeLabel(start) {
+  if (typeof start === "string") {
+    const m = start.match(/T(\d{2}:\d{2})/);
+    if (m) return m[1];
+  }
+
+  const parsed = new Date(start);
+  if (Number.isNaN(parsed.getTime())) return "--:--";
+
+  return parsed.toLocaleTimeString("sr-RS", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function getMonthGrid(date) {
   const year = date.getFullYear();
   const month = date.getMonth();
@@ -69,8 +95,8 @@ export default function Pocetna() {
           isAdmin
             ? http.get("/predaje")
             : user?.uloga === "PROFESOR"
-              ? http.get("/predaje/za-moje-predmete")
-              : http.get("/predaje/moje"),
+            ? http.get("/predaje/za-moje-predmete")
+            : http.get("/predaje/moje"),
         ]);
 
         const predmeti = predmetiRes.data?.data || predmetiRes.data || [];
@@ -95,9 +121,7 @@ export default function Pocetna() {
       try {
         const res = await http.get("/kalendar/rokovi");
         setCalendarData(res.data?.data || []);
-
         setCalendarConnected(Boolean(res.data?.meta?.external_calendar_connected));
-
         setTodayMeta(res.data?.meta?.today || null);
       } catch {
         setCalendarData([]);
@@ -126,10 +150,9 @@ export default function Pocetna() {
     const map = new Map();
 
     calendarData.forEach((event) => {
-      const eventDate = new Date(event.start);
-      if (Number.isNaN(eventDate.getTime())) return;
+      const key = eventDateKeyFromStart(event.start);
+      if (!key) return;
 
-      const key = toKey(eventDate);
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(event);
     });
@@ -291,26 +314,24 @@ export default function Pocetna() {
 
                   <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
                     {dayEvents.slice(0, 3).map((event) => {
-                      const when = new Date(event.start);
                       const rokTekst = event.all_day
                         ? "Rok do kraja dana"
-                        : `Rok do ${when.toLocaleTimeString("sr-RS", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}`;
+                        : `Rok do ${eventTimeLabel(event.start)}`;
 
                       return (
                         <div
                           key={event.id ?? `${event.title}-${event.start}`}
                           style={{
                             fontSize: 12,
-                            borderLeft: `3px solid ${event.source === "external_calendar" ? "#dc2626" : "#111"}`,
-                            background: event.source === "external_calendar" ? "#fef2f2" : "#f3f4f6",
+                            borderLeft: `3px solid ${
+                              event.source === "external_calendar" ? "#dc2626" : "#111"
+                            }`,
+                            background:
+                              event.source === "external_calendar" ? "#fef2f2" : "#f3f4f6",
                             padding: "3px 6px",
                             borderRadius: 6,
                           }}
                         >
-
                           <div style={{ fontWeight: 600, lineHeight: 1.2 }}>{event.title}</div>
                           <div style={{ color: "#555" }}>{rokTekst}</div>
                         </div>
