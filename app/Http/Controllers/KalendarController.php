@@ -50,7 +50,6 @@ class KalendarController extends Controller
             ];
         })->values();
 
-        // ✅ EKSTERNO: praznici preko Nager.Date
         $eksterniRokovi = $this->fetchPublicHolidayEvents($now);
 
         $rokovi = $lokalniRokovi
@@ -61,11 +60,9 @@ class KalendarController extends Controller
         return response()->json([
             'data' => $rokovi,
             'meta' => [
-                // ✅ kao u diff-u
                 'external_calendar_provider' => 'nager_date_public_holidays',
                 'external_calendar_connected' => $this->calendarApiConfigured(),
 
-                // ✅ zadrzano za frontend
                 'today' => [
                     'date' => $now->toDateString(),
                     'day_name' => $now->locale('sr')->isoFormat('dddd'),
@@ -81,25 +78,36 @@ class KalendarController extends Controller
         }
 
         $countryCode = strtoupper(config('services.calendar_api.country_code', 'RS'));
-        $year = $now->year;
-        $cacheKey = sprintf('calendar_holidays_%s_%s', $countryCode, $year);
-
+        $yearsAhead = max(1, (int) config('services.calendar_api.years_ahead', 5));
+        $years = collect(range(0, $yearsAhead))
+            ->map(fn (int $offset) => $now->copy()->addYears($offset)->year)
+            ->all();
+            
         try {
-            $items = Cache::remember($cacheKey, now()->addHours(12), function () use ($countryCode, $year) {
-                $response = Http::timeout(8)
-                    ->get(sprintf('https://date.nager.at/api/v3/PublicHolidays/%s/%s', $year, $countryCode));
+            $items = collect($years)
+                ->unique()
+                ->flatMap(function (int $year) use ($countryCode) {
+                    $cacheKey = sprintf('calendar_holidays_%s_%s', $countryCode, $year);
 
-                if (!$response->successful()) {
-                    Log::warning('Nager.Date events fetch failed', [
-                        'status' => $response->status(),
-                        'body' => $response->body(),
-                    ]);
+                    return Cache::remember($cacheKey, now()->addHours(12), function () use ($countryCode, $year) {
+                        $response = Http::timeout(8)
+                            ->get(sprintf('https://date.nager.at/api/v3/PublicHolidays/%s/%s', $year, $countryCode));
 
-                    return [];
-                }
+                        if (!$response->successful()) {
+                            Log::warning('Nager.Date events fetch failed', [
+                                'status' => $response->status(),
+                                'body' => $response->body(),
+                                'year' => $year,
+                                'country_code' => $countryCode,
+                            ]);
 
-                return $response->json();
-            });
+                            return [];
+                        }
+
+                        return $response->json();
+                    });
+                })
+                ->values();
 
             return collect($items)
                 ->map(function (array $event) {

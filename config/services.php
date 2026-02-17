@@ -42,5 +42,6 @@ return [
 
      'calendar_api' => [
         'country_code' => env('CALENDAR_API_COUNTRY_CODE', 'RS'),
+        'years_ahead' => env('CALENDAR_API_YEARS_AHEAD', 5),
     ],
 ];
