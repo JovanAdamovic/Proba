@@ -1,0 +1,224 @@
+openapi: 3.0.3
+info:
+  title: Evidencije API
+  version: 1.0.0
+  description: API za upravljanje predmetima, zadacima, predajama i upisima.
+servers:
+  - url: http://localhost:8000/api
+    description: Lokalni API (Docker)
+tags:
+  - name: Auth
+  - name: Predmeti
+  - name: Zadaci
+  - name: Predaje
+  - name: Upisi
+paths:
+  /login:
+    post:
+      tags: [Auth]
+      summary: Prijava korisnika
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Uspešna prijava
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+  /register:
+    post:
+      tags: [Auth]
+      summary: Registracija korisnika
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ime, prezime, email, password, password_confirmation]
+              properties:
+                ime:
+                  type: string
+                prezime:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                password_confirmation:
+                  type: string
+      responses:
+        '201':
+          description: Korisnik registrovan
+  /me:
+    get:
+      tags: [Auth]
+      summary: Trenutno prijavljen korisnik
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Podaci o korisniku
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /predmeti:
+    get:
+      tags: [Predmeti]
+      summary: Lista predmeta
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista predmeta
+    post:
+      tags: [Predmeti]
+      summary: Kreiranje predmeta (admin)
+      security:
+        - sanctumAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredmetPayload'
+      responses:
+        '201':
+          description: Predmet kreiran
+  /predmeti/{id}:
+    get:
+      tags: [Predmeti]
+      summary: Jedan predmet
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Predmet
+    put:
+      tags: [Predmeti]
+      summary: Izmena predmeta (admin)
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Predmet izmenjen
+    delete:
+      tags: [Predmeti]
+      summary: Brisanje predmeta (admin)
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Predmet obrisan
+  /zadaci:
+    get:
+      tags: [Zadaci]
+      summary: Lista zadataka
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista zadataka
+    post:
+      tags: [Zadaci]
+      summary: Kreiranje zadatka (profesor)
+      security:
+        - sanctumAuth: []
+      responses:
+        '201':
+          description: Zadatak kreiran
+  /predaje:
+    get:
+      tags: [Predaje]
+      summary: Lista predaja
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista predaja
+    post:
+      tags: [Predaje]
+      summary: Nova predaja (student)
+      security:
+        - sanctumAuth: []
+      responses:
+        '201':
+          description: Predaja kreirana
+  /upisi:
+    get:
+      tags: [Upisi]
+      summary: Lista upisa
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista upisa
+    post:
+      tags: [Upisi]
+      summary: Kreiranje upisa (admin)
+      security:
+        - sanctumAuth: []
+      responses:
+        '201':
+          description: Upis kreiran
+components:
+  securitySchemes:
+    sanctumAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API token
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        ime:
+          type: string
+        prezime:
+          type: string
+        email:
+          type: string
+          format: email
+        uloga:
+          type: string
+    PredmetPayload:
+      type: object
+      required: [naziv, opis]
+      properties:
+        naziv:
+          type: string
+        opis:
+          type: string
