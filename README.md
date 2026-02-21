@@ -7,6 +7,50 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+# Docker i Swagger dokaz ispunjenosti zahteva
+
+### 1) Dockerizacija (Docker + Docker Compose)
+
+Projekat sadrži oba tražena artefakta:
+
+- `Dockerfile` za PHP/Laravel aplikaciju.
+- `docker-compose.yaml` sa servisima:
+  - `app` (Laravel/PHP-FPM),
+  - `web` (Nginx),
+  - `db` (MySQL),
+  - `swagger-ui` (Swagger UI).
+
+Pokretanje:
+
+```bash
+docker compose up --build -d
+```
+
+Brza provera:
+
+```bash
+docker compose ps
+curl.exe -I http://localhost:8000
+```
+
+### 2) Swagger API specifikacija i dokumentacija
+
+OpenAPI specifikacija je uključena u repozitorijum:
+
+- `docs/openapi.yaml`
+
+Swagger UI servis u `docker-compose.yaml` automatski mount-uje taj fajl i objavljuje ga na:
+
+- http://localhost:8081
+
+Brza provera da je specifikacija dostupna u kontejneru:
+
+```bash
+docker compose exec swagger-ui ls -la /app/docs
+```
+
+Ako su servisi pokrenuti i otvara se `http://localhost:8081` sa listom endpoint-a iz `docs/openapi.yaml`, zahtev za Swagger specifikacijom je ispunjen.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
