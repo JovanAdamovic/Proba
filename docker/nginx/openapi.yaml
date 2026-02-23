@@ -1,17 +1,23 @@
 openapi: 3.0.3
+
 info:
   title: Evidencije API
   version: 1.0.0
-  description: API za upravljanje predmetima, zadacima, predajama i upisima.
+  description: API za upravljanje predmetima, zadacima, predajama, upisima i autentikacijom korisnika.
+
 servers:
   - url: http://localhost:8000/api
     description: Lokalni API (Docker)
+
 tags:
   - name: Auth
   - name: Predmeti
   - name: Zadaci
   - name: Predaje
   - name: Upisi
+  - name: Kalendar
+  - name: Provere plagijata
+
 paths:
   /login:
     post:
@@ -28,8 +34,10 @@ paths:
                 email:
                   type: string
                   format: email
+                  example: student@example.com
                 password:
                   type: string
+                  example: password
       responses:
         '200':
           description: Uspešna prijava
@@ -40,34 +48,10 @@ paths:
                 properties:
                   token:
                     type: string
+                    example: "1|abc123..."
                   user:
                     $ref: '#/components/schemas/User'
-  /register:
-    post:
-      tags: [Auth]
-      summary: Registracija korisnika
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [ime, prezime, email, password, password_confirmation]
-              properties:
-                ime:
-                  type: string
-                prezime:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                password_confirmation:
-                  type: string
-      responses:
-        '201':
-          description: Korisnik registrovan
+
   /me:
     get:
       tags: [Auth]
@@ -81,6 +65,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+
+  /logout:
+    post:
+      tags: [Auth]
+      summary: Odjava korisnika
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Uspešna odjava
+
+  /users:
+    get:
+      tags: [Auth]
+      summary: Lista korisnika (admin)
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista korisnika
+
+  /kalendar/rokovi:
+    get:
+      tags: [Kalendar]
+      summary: Rokovi u kalendaru
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista rokova
+
+  /predmeti/moji:
+    get:
+      tags: [Predmeti]
+      summary: Moji predmeti
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista predmeta za trenutnog korisnika
+
   /predmeti:
     get:
       tags: [Predmeti]
@@ -104,6 +129,7 @@ paths:
       responses:
         '201':
           description: Predmet kreiran
+
   /predmeti/{id}:
     get:
       tags: [Predmeti]
@@ -122,6 +148,12 @@ paths:
         - sanctumAuth: []
       parameters:
         - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredmetPayload'
       responses:
         '200':
           description: Predmet izmenjen
@@ -135,6 +167,7 @@ paths:
       responses:
         '204':
           description: Predmet obrisan
+
   /zadaci:
     get:
       tags: [Zadaci]
@@ -152,6 +185,49 @@ paths:
       responses:
         '201':
           description: Zadatak kreiran
+
+  /zadaci/moji:
+    get:
+      tags: [Zadaci]
+      summary: Moji zadaci
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista zadataka za trenutnog korisnika
+
+  /zadaci/{id}:
+    get:
+      tags: [Zadaci]
+      summary: Jedan zadatak
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Zadatak
+    put:
+      tags: [Zadaci]
+      summary: Izmena zadatka (profesor)
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Zadatak izmenjen
+    delete:
+      tags: [Zadaci]
+      summary: Brisanje zadatka (profesor)
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Zadatak obrisan
+
   /predaje:
     get:
       tags: [Predaje]
@@ -169,6 +245,115 @@ paths:
       responses:
         '201':
           description: Predaja kreirana
+
+  /predaje/moje:
+    get:
+      tags: [Predaje]
+      summary: Moje predaje (student)
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista predaja trenutnog studenta
+
+  /predaje/za-moje-predmete:
+    get:
+      tags: [Predaje]
+      summary: Predaje za moje predmete (profesor)
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista predaja za predmete trenutnog profesora
+
+  /predaje/export/csv:
+    get:
+      tags: [Predaje]
+      summary: Izvoz predaja u CSV
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: CSV fajl sa predajama
+
+  /predaje/{id}/file:
+    get:
+      tags: [Predaje]
+      summary: Preuzimanje fajla predaje
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Fajl predaje
+
+  /predaje/{id}:
+    get:
+      tags: [Predaje]
+      summary: Jedna predaja
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Predaja
+    put:
+      tags: [Predaje]
+      summary: Izmena predaje (profesor)
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Predaja izmenjena
+    delete:
+      tags: [Predaje]
+      summary: Brisanje predaje (student)
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Predaja obrisana
+
+  /provere-plagijata:
+    get:
+      tags: [Provere plagijata]
+      summary: Lista provera plagijata (profesor)
+      security:
+        - sanctumAuth: []
+      responses:
+        '200':
+          description: Lista provera plagijata
+
+  /provere-plagijata/{id}:
+    get:
+      tags: [Provere plagijata]
+      summary: Jedna provera plagijata (profesor)
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Provera plagijata
+
+  /predaje/{predajaId}/provera-plagijata:
+    post:
+      tags: [Provere plagijata]
+      summary: Pokretanje provere plagijata (profesor)
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PredajaIdParam'
+      responses:
+        '201':
+          description: Provera plagijata pokrenuta
+
   /upisi:
     get:
       tags: [Upisi]
@@ -186,12 +371,46 @@ paths:
       responses:
         '201':
           description: Upis kreiran
+
+  /upisi/{id}:
+    get:
+      tags: [Upisi]
+      summary: Jedan upis
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Upis
+    put:
+      tags: [Upisi]
+      summary: Izmena upisa (admin)
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Upis izmenjen
+    delete:
+      tags: [Upisi]
+      summary: Brisanje upisa (admin)
+      security:
+        - sanctumAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Upis obrisan
+
 components:
   securitySchemes:
     sanctumAuth:
       type: http
       scheme: bearer
       bearerFormat: API token
+
   parameters:
     IdParam:
       name: id
@@ -199,26 +418,42 @@ components:
       required: true
       schema:
         type: integer
+
+    PredajaIdParam:
+      name: predajaId
+      in: path
+      required: true
+      schema:
+        type: integer
+
   schemas:
     User:
       type: object
       properties:
         id:
           type: integer
+          example: 1
         ime:
           type: string
+          example: Petar
         prezime:
           type: string
+          example: Petrović
         email:
           type: string
           format: email
+          example: petar@example.com
         uloga:
           type: string
+          example: student
+
     PredmetPayload:
       type: object
       required: [naziv, opis]
       properties:
         naziv:
           type: string
+          example: Internet tehnologije
         opis:
           type: string
+          example: Predmet o web tehnologijama
